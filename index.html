@@ -10,31 +10,31 @@
 </head>
 <body>
 
-<header>
+<header id="mainHeader">
     <div class="header-toggles">
         <button id="langToggle" class="toggle-btn">🇲🇽 ES</button>
         <button id="themeToggle" class="toggle-btn">🌙</button>
     </div>
-
     <img src="logo.png" alt="pdfeditforms.com" class="main-logo">
     
     <div id="stepper" class="stepper-container">
-        <div class="step active" id="step-1"><span>1</span> <span data-i18n="step1">Subir</span></div>
+        <div class="step active" id="step-1"><span>1</span> <span>Subir</span></div>
         <div class="step-line"></div>
-        <div class="step" id="step-2"><span>2</span> <span data-i18n="step2">Procesar</span></div>
+        <div class="step" id="step-2"><span>2</span> <span>Procesar</span></div>
         <div class="step-line"></div>
-        <div class="step" id="step-3"><span>3</span> <span data-i18n="step3">Editar</span></div>
+        <div class="step" id="step-3"><span>3</span> <span>Editar</span></div>
         <div class="step-line"></div>
-        <div class="step" id="step-4"><span>4</span> <span data-i18n="step4">Descargar</span></div>
+        <div class="step" id="step-4"><span>4</span> <span>Descargar</span></div>
     </div>
 </header>
 
 <main class="app-main">
+    <!-- VISTA 1: SUBIR ARCHIVO -->
     <div id="uploadView" class="view">
-        <label class="upload-area" id="uploadArea" style="position: relative; overflow: hidden;">
-            <input type="file" id="fileInput" accept=".pdf" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;">
-            <div class="upload-icon" style="pointer-events: none;">📄</div>
-            <p data-i18n="dragDrop" style="pointer-events: none;">Arrastra tu PDF aquí o haz clic para seleccionar</p>
+        <label class="upload-area" id="uploadArea">
+            <input type="file" id="fileInput" accept=".pdf" style="position: absolute; opacity: 0; width: 0; height: 0;">
+            <div class="upload-icon">📄</div>
+            <p>Arrastra tu PDF aquí o haz clic para seleccionar</p>
         </label>
         
         <div class="app-branding">
@@ -43,69 +43,82 @@
             </div>
             <span>PDF EDIT FORMS APP</span>
         </div>
-        <div id="status" class="status-msg"></div>
     </div>
     
-    <div id="editorView" style="display: none;">
+    <!-- VISTA 2: EDITOR -->
+    <div id="editorView" class="view" style="display: none;">
+        
+        <!-- MENÚ HAMBURGUESA (Arriba a la derecha) -->
+        <div id="hamburgerMenu">
+            <button id="hamburgerBtn">☰</button>
+            <div id="hamburgerDropdown">
+                <button id="saveBtn" class="btn-tool btn-primary" style="width: 100%; text-align: left;">💾 Guardar</button>
+                <a id="downloadBtn" class="btn-tool btn-success" style="display: none; width: 100%; text-align: left; box-sizing: border-box;">⬇ Descargar</a>
+                <button id="resetBtn" class="btn-tool" style="width: 100%; text-align: left;">↺ Reiniciar</button>
+                <button id="toggleHeaderBtn" class="btn-tool" style="width: 100%; text-align: left;">👁 Header</button>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR DEL PDF -->
         <div class="pdf-container" id="pdfContainer">
             <div id="pdfPages"></div>
         </div>
         
+        <!-- BOTONES FLOTANTES -->
         <button id="zoomBtn" class="zoom-fab">🔍 +</button>
-        
-        <div id="bottomGlassBar" class="glass-bar">
-            <button id="closeBottomBar" class="close-glass">✕</button>
-            <div class="carousel-content">
-                <div class="carousel-item"><button id="toggleFields" class="btn-tool">👁 Campos</button></div>
-                <div class="carousel-item"><span id="fieldCounter" class="counter-text">0 campos</span></div>
-                <div class="carousel-item"><button id="resetBtn" class="btn-tool">↺ Reiniciar</button></div>
-                <div class="carousel-item"><button id="addFieldBtn" class="btn-tool btn-primary">+ Añadir Campo</button></div>
-                <div class="carousel-item"><button id="saveBtn" class="btn-tool btn-primary">💾 <span data-i18n="saveBtn">Guardar</span></button></div>
-                <div class="carousel-item"><a id="downloadBtn" class="btn-tool btn-success" style="display:none;">⬇ Descargar</a></div>
-                <div class="carousel-item"><button id="toggleHeaderBtn" class="btn-tool">☰ Header</button></div>
-                
-                <div class="carousel-separator"></div>
-
-                <div id="fieldProperties" class="properties-group" style="display: none;">
-                    <div class="carousel-item">
-                        <label>Nombre</label>
-                        <input type="text" id="propName" readonly>
-                    </div>
-                    <div class="carousel-item">
-                        <label>Tipo</label>
-                        <select id="propType"><option value="text">Texto libre</option></select>
-                    </div>
-                    <div class="carousel-item">
-                        <label>Celdas</label>
-                        <input type="number" id="propCells" value="0" min="0">
-                    </div>
-                    <div class="carousel-item">
-                        <label>Fuente</label>
-                        <input type="number" id="propFontSize" value="10">
-                    </div>
-                    <div class="carousel-item">
-                        <label>Alinear</label>
-                        <select id="propAlign">
-                            <option value="left">Izquierda</option>
-                            <option value="center">Centro</option>
-                            <option value="right">Derecha</option>
-                        </select>
-                    </div>
-                    <div class="carousel-item" style="flex-direction: row; align-items: center; gap: 5px; margin-top: 15px;">
-                        <input type="checkbox" id="propShowLines" style="width: 16px; height: 16px;">
-                        <label for="propShowLines" style="margin: 0; cursor: pointer;">Líneas PDF</label>
-                    </div>
-                    <div class="carousel-item">
-                        <button id="deleteField" class="btn-tool btn-danger">🗑️ Eliminar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <button id="addFieldBtn" class="fab-pencil" title="Dibujar campo manual">✏️</button>
     </div>
 </main>
+
+<!-- POPOVER FLOTANTE DE EDICIÓN -->
+<div id="floatingToolbar" class="floating-popover">
+    <div class="popover-header">
+        <span id="popoverTitle">Editar Campo</span>
+        <div style="display: flex; gap: 8px;">
+            <button id="helpBtn" class="icon-btn" title="Ayuda">?</button>
+            <button id="closePopover" class="icon-btn">✕</button>
+        </div>
+    </div>
+    
+    <div id="helpTooltip">
+        <strong>Guía rápida:</strong><br>
+        • Si necesitas dividir el texto (ej. CURP o NIP), usa la opción <strong>Celdas</strong>.
+        • Para dibujar un campo desde cero, usa el botón del <strong>Lápiz</strong> (✏️).
+    </div>
+
+    <div id="fieldProperties">
+        <div class="prop-item text-only-option">
+            <label>Tipo</label>
+            <select id="propType">
+                <option value="text">Texto</option>
+                <option value="number">Número</option>
+            </select>
+        </div>
+        <div class="prop-item text-only-option">
+            <label>Celdas</label>
+            <input type="number" id="propCells" value="0" min="0">
+        </div>
+        <div class="prop-item text-only-option">
+            <label>Fuente</label>
+            <input type="number" id="propFontSize" value="10">
+        </div>
+        <div class="prop-item text-only-option">
+            <label>Alinear</label>
+            <select id="propAlign">
+                <option value="left">Izquierda</option>
+                <option value="center">Centro</option>
+                <option value="right">Derecha</option>
+            </select>
+        </div>
+        
+        <div class="prop-item" style="margin-left: auto; min-width: 80px;">
+            <label style="opacity: 0;">.</label>
+            <button id="deleteField" class="btn-tool btn-danger" style="margin-top: 0;">🗑️ Borrar</button>
+        </div>
+    </div>
+</div>
 
 <script src="script.js"></script>
 </body>
 </html>
-
 

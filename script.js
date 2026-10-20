@@ -1,41 +1,3 @@
-// Lógica del Header Auto-Ocultable
-const headerElement = document.querySelector('header');
-let headerTimeout;
-
-function showHeaderTemporarily() {
-    if (!headerElement) return;
-    headerElement.classList.remove('header-hidden');
-    document.body.classList.remove('header-hidden'); // Restaura el espacio del PDF
-    
-    clearTimeout(headerTimeout);
-    headerTimeout = setTimeout(() => {
-        headerElement.classList.add('header-hidden');
-        document.body.classList.add('header-hidden'); // El PDF sube y ocupa todo
-    }, 3500); 
-}
-
-// Botón manual para ocultar/mostrar
-document.addEventListener('DOMContentLoaded', () => {
-    const toggleBtn = document.getElementById('toggleHeaderBtn');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', () => {
-            if (headerElement.classList.contains('header-hidden')) {
-                headerElement.classList.remove('header-hidden');
-                document.body.classList.remove('header-hidden');
-            } else {
-                headerElement.classList.add('header-hidden');
-                document.body.classList.add('header-hidden');
-            }
-        });
-    }
-});
-
-// Modificar updateStepper para que muestre el header temporalmente al avanzar
-const originalUpdateStepper = updateStepper;
-updateStepper = function(step) {
-    originalUpdateStepper(step);
-    showHeaderTemporarily();
-};
 // Inicializar PDF.js
 try {
     if (typeof pdfjsLib !== 'undefined') {
@@ -45,22 +7,19 @@ try {
 
 const API_URL = '';
 
-// DOM
+// DOM Elements
 const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
 const uploadView = document.getElementById('uploadView');
 const editorView = document.getElementById('editorView');
 const pdfPages = document.getElementById('pdfPages');
-const fieldCounter = document.getElementById('fieldCounter');
-const bottomGlassBar = document.getElementById('bottomGlassBar');
-const fieldProperties = document.getElementById('fieldProperties');
-const downloadBtn = document.getElementById('downloadBtn');
+const floatingToolbar = document.getElementById('floatingToolbar');
+const headerElement = document.getElementById('mainHeader');
 
 // Estado
 let selectedFile = null;
 let currentSession = null;
 let currentFields = [];
-let originalFields = [];
 let selectedFieldName = null;
 let currentScale = 1;
 let pdfDoc = null;
@@ -68,8 +27,12 @@ let isZoomed = false;
 let isDrawingMode = false;
 let isDrawing = false;
 let drawStartX, drawStartY;
+let resizeTimeout = null;
+let headerTimeout = null;
 
-// Stepper
+// ==========================================
+// HEADER Y STEPPER
+// ==========================================
 function updateStepper(step) {
     for (let i = 1; i <= 4; i++) {
         const el = document.getElementById(`step-${i}`);
@@ -82,9 +45,36 @@ function updateStepper(step) {
             el.querySelector('span').style.background = '#d2d2d7';
         }
     }
+    showHeaderTemporarily();
 }
 
-// Tema
+function showHeaderTemporarily() {
+    if (!headerElement) return;
+    headerElement.classList.remove('header-hidden');
+    document.body.classList.remove('header-hidden');
+    clearTimeout(headerTimeout);
+    headerTimeout = setTimeout(() => {
+        headerElement.classList.add('header-hidden');
+        document.body.classList.add('header-hidden');
+    }, 3500); 
+}
+
+const toggleHeaderBtn = document.getElementById('toggleHeaderBtn');
+if (toggleHeaderBtn) {
+    toggleHeaderBtn.addEventListener('click', () => {
+        if (headerElement.classList.contains('header-hidden')) {
+            headerElement.classList.remove('header-hidden');
+            document.body.classList.remove('header-hidden');
+        } else {
+            headerElement.classList.add('header-hidden');
+            document.body.classList.add('header-hidden');
+        }
+    });
+}
+
+// ==========================================
+// TEMA (MODO OSCURO)
+// ==========================================
 const themeToggle = document.getElementById('themeToggle');
 let currentTheme = localStorage.getItem('theme') || 'light';
 function applyTheme(theme) {
@@ -105,7 +95,9 @@ if (themeToggle) {
 }
 applyTheme(currentTheme);
 
-// Manejo de Archivo y Procesamiento
+// ==========================================
+// SUBIDA DE ARCHIVO Y PROCESAMIENTO
+// ==========================================
 if (fileInput) fileInput.addEventListener('change', (e) => { if (e.target.files[0]) selectFile(e.target.files[0]); });
 
 if (uploadArea) {
@@ -121,7 +113,8 @@ function selectFile(file) {
     selectedFile = file;
     uploadArea.querySelector('p').textContent = '⏳ Analizando PDF...';
     uploadArea.classList.add('processing');
-    document.getElementById('appIconSpinner').classList.add('processing');
+    const spinner = document.getElementById('appIconSpinner');
+    if (spinner) spinner.classList.add('processing');
     updateStepper(2);
     setTimeout(() => { ejecutarProcesamiento(); }, 500);
 }
@@ -137,50 +130,44 @@ async function ejecutarProcesamiento() {
         const data = await response.json();
         
         currentSession = data.session_id;
-        currentFields = data.fields.map(f => ({...f, type: f.type || 'text', font_size: 10, align: 'left', show_lines: f.show_lines !== false}));
-        originalFields = JSON.parse(JSON.stringify(currentFields));
+        currentFields = data.fields.map(f => ({...f, type: f.type || 'text', font_size: 10, align: 'left'}));
         
         pdfDoc = await pdfjsLib.getDocument(API_URL + data.pdf_url).promise;
         
-        uploadView.style.display = 'none'; document.body.classList.add('editing-mode');
-        editorView.style.display = 'flex'; showHeaderTemporarily();
-        await renderPdf();
+        uploadView.style.display = 'none'; 
+        document.body.classList.add('editing-mode');
+        editorView.style.display = 'flex'; 
+        document.getElementById('hamburgerMenu').style.display = 'block';
+        showHeaderTemporarily();
         
-        fieldCounter.textContent = currentFields.length + ' campos';
+        await renderPdf();
         updateStepper(3);
-        document.getElementById('zoomBtn').style.display = 'flex';
     } catch (error) {
         alert("Error: " + error.message);
         uploadArea.classList.remove('processing');
         uploadArea.querySelector('p').textContent = '❌ Error. Intenta de nuevo.';
-        document.getElementById('appIconSpinner').classList.remove('processing');
+        const spinner = document.getElementById('appIconSpinner');
+        if (spinner) spinner.classList.remove('processing');
         updateStepper(1);
     }
 }
 
-// Renderizar PDF
-
+// ==========================================
+// RENDERIZADO Y ZOOM
+// ==========================================
 async function renderPdf() {
     if (!pdfDoc) return;
     pdfPages.innerHTML = '';
     
     const firstPage = await pdfDoc.getPage(1);
     const pdfContainer = document.querySelector('.pdf-container');
-    
-    // Escala base adaptada al ancho de la pantalla
     const margin = window.innerWidth <= 768 ? 20 : 40;
     const containerWidth = pdfContainer.clientWidth - margin;
     const baseScale = Math.max(0.5, Math.min(2, containerWidth / firstPage.getViewport({ scale: 1 }).width));
     
-    // Aplicar Zoom del 200% si está activo
     currentScale = isZoomed ? baseScale * 2 : baseScale;
-
-    // Activar o desactivar el scroll horizontal
-    if (isZoomed) {
-        pdfContainer.classList.add('zoomed');
-    } else {
-        pdfContainer.classList.remove('zoomed');
-    }
+    if (isZoomed) pdfContainer.classList.add('zoomed');
+    else pdfContainer.classList.remove('zoomed');
     
     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
         const page = await pdfDoc.getPage(pageNum);
@@ -206,7 +193,21 @@ async function renderPdf() {
     }
 }
 
+const zoomBtn = document.getElementById('zoomBtn');
+if (zoomBtn) {
+    zoomBtn.addEventListener('click', () => {
+        isZoomed = !isZoomed;
+        zoomBtn.innerHTML = isZoomed ? '🔍 100%' : '🔍 +';
+        zoomBtn.style.background = isZoomed ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 113, 227, 0.9)';
+        const pdfContainer = document.querySelector('.pdf-container');
+        const scrollY = pdfContainer.scrollTop;
+        renderPdf().then(() => { pdfContainer.scrollTop = scrollY; });
+    });
+}
 
+// ==========================================
+// CAMPOS Y POPOVER
+// ==========================================
 function createFieldElement(field, pageDiv) {
     const div = document.createElement('div');
     div.className = 'field-rect';
@@ -218,31 +219,16 @@ function createFieldElement(field, pageDiv) {
     div.style.height = ((field.rect[3] - field.rect[1]) * currentScale) + 'px';
     
     div.dataset.fieldName = field.name;
-    div.addEventListener('click', (e) => { e.stopPropagation(); if (!isDrawingMode) selectField(field.name); });
+    div.addEventListener('click', (e) => { 
+        e.stopPropagation(); 
+        if (!isDrawingMode) selectField(field.name); 
+    });
+    
     makeDraggable(div, field);
     pageDiv.appendChild(div);
 }
 
-// Selección y Menú de Cristal
-
-document.getElementById('zoomBtn').addEventListener('click', () => {
-    isZoomed = !isZoomed;
-    const btn = document.getElementById('zoomBtn');
-    
-    // Mostrar feedback visual en el botón
-    btn.innerHTML = isZoomed ? '🔍 100%' : '🔍 +';
-    btn.style.background = isZoomed ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 113, 227, 0.9)';
-    
-    const pdfContainer = document.querySelector('.pdf-container');
-    const scrollY = pdfContainer.scrollTop;
-    
-    renderPdf().then(() => {
-        pdfContainer.scrollTop = scrollY; 
-    });
-});
-
 function selectField(fieldName) {
-
     selectedFieldName = fieldName;
     const field = currentFields.find(f => f.name === fieldName);
     if (!field) return;
@@ -251,62 +237,123 @@ function selectField(fieldName) {
     const el = document.querySelector(`[data-field-name="${CSS.escape(fieldName)}"]`);
     if (el) el.classList.add('selected');
     
-    bottomGlassBar.classList.add('active');
-    document.getElementById('zoomBtn').style.display = 'none'; if (headerElement) { headerElement.classList.add('header-hidden'); document.body.classList.add('header-hidden'); clearTimeout(headerTimeout); }
-    fieldProperties.style.display = 'flex';
+    const popoverTitle = document.getElementById('popoverTitle');
+    if (popoverTitle) popoverTitle.textContent = field.name.substring(0, 20);
     
-    document.getElementById('propName').value = field.name;
-    document.getElementById('propCells').value = field.max_len || 0;
-    document.getElementById('propFontSize').value = field.font_size || 10;
-    document.getElementById('propAlign').value = field.align || 'left';
-    document.getElementById('propShowLines').checked = field.show_lines !== false;
+    const pType = document.getElementById('propType');
+    if (pType) pType.value = field.type_input || 'text';
+    const pCells = document.getElementById('propCells');
+    if (pCells) pCells.value = field.max_len || 0;
+    const pFont = document.getElementById('propFontSize');
+    if (pFont) pFont.value = field.font_size || 10;
+    const pAlign = document.getElementById('propAlign');
+    if (pAlign) pAlign.value = field.align || 'left';
+    
+    const isCheckbox = field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'));
+    document.querySelectorAll('.text-only-option').forEach(opt => {
+        opt.style.display = isCheckbox ? 'none' : 'flex';
+    });
+
+    floatingToolbar.style.display = 'flex';
+    if (zoomBtn) zoomBtn.style.display = 'none';
+    if (document.getElementById('addFieldBtn')) document.getElementById('addFieldBtn').style.display = 'none';
+    if (headerElement) {
+        headerElement.classList.add('header-hidden');
+        document.body.classList.add('header-hidden');
+        clearTimeout(headerTimeout);
+    }
+
+    if (el) {
+        const rect = el.getBoundingClientRect();
+        let topPos = rect.top;
+        if (topPos < 200) topPos = 200; 
+        
+        floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px';
+        floatingToolbar.style.top = topPos + 'px';
+    }
 }
 
 function clearSelection() {
     selectedFieldName = null;
     document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('selected'));
-    bottomGlassBar.classList.remove('active');
-    document.getElementById('zoomBtn').style.display = 'flex';
-    fieldProperties.style.display = 'none';
+    floatingToolbar.style.display = 'none';
+    const helpTip = document.getElementById('helpTooltip');
+    if (helpTip) helpTip.style.display = 'none';
+    
+    if (zoomBtn && document.body.classList.contains('editing-mode')) zoomBtn.style.display = 'flex';
+    if (document.getElementById('addFieldBtn') && document.body.classList.contains('editing-mode')) document.getElementById('addFieldBtn').style.display = 'flex';
 }
 
+const closePopover = document.getElementById('closePopover');
+if (closePopover) closePopover.addEventListener('click', clearSelection);
+
 document.addEventListener('mousedown', (e) => {
-    if (bottomGlassBar.classList.contains('active') && !e.target.closest('.field-rect') && !e.target.closest('.glass-bar') && !e.target.closest('#floatingToolbar')) {
+    if (floatingToolbar.style.display === 'flex' && !e.target.closest('.field-rect') && !e.target.closest('.floating-popover')) {
         clearSelection();
     }
 });
-document.getElementById('closeBottomBar').addEventListener('click', clearSelection);
 
-// Propiedades
-document.getElementById('propCells').addEventListener('input', (e) => {
-    const f = currentFields.find(f => f.name === selectedFieldName);
-    if (f) { f.max_len = parseInt(e.target.value) || 0; renderPdf(); selectField(f.name); }
-});
-document.getElementById('propFontSize').addEventListener('input', (e) => {
-    const f = currentFields.find(f => f.name === selectedFieldName);
-    if (f) f.font_size = parseInt(e.target.value) || 10;
-});
-document.getElementById('propAlign').addEventListener('change', (e) => {
-    const f = currentFields.find(f => f.name === selectedFieldName);
-    if (f) f.align = e.target.value;
-});
-document.getElementById('propShowLines').addEventListener('change', (e) => {
-    const f = currentFields.find(f => f.name === selectedFieldName);
-    if (f) f.show_lines = e.target.checked;
-});
+// ==========================================
+// PROPIEDADES DEL POPOVER
+// ==========================================
+const pCells = document.getElementById('propCells');
+if (pCells) {
+    pCells.addEventListener('input', (e) => {
+        const f = currentFields.find(f => f.name === selectedFieldName);
+        if (f) { f.max_len = parseInt(e.target.value) || 0; renderPdf(); selectField(f.name); }
+    });
+}
+const pFont = document.getElementById('propFontSize');
+if (pFont) {
+    pFont.addEventListener('input', (e) => {
+        const f = currentFields.find(f => f.name === selectedFieldName);
+        if (f) f.font_size = parseInt(e.target.value) || 10;
+    });
+}
+const pAlign = document.getElementById('propAlign');
+if (pAlign) {
+    pAlign.addEventListener('change', (e) => {
+        const f = currentFields.find(f => f.name === selectedFieldName);
+        if (f) f.align = e.target.value;
+    });
+}
+const pType = document.getElementById('propType');
+if (pType) {
+    pType.addEventListener('change', (e) => {
+        const f = currentFields.find(f => f.name === selectedFieldName);
+        if (f) f.type_input = e.target.value;
+    });
+}
 
-// Eliminar
-document.getElementById('deleteField').addEventListener('click', () => {
-    if (!selectedFieldName) return;
-    currentFields = currentFields.filter(f => f.name !== selectedFieldName);
-    renderPdf(); clearSelection(); fieldCounter.textContent = currentFields.length + ' campos';
-});
+const deleteBtn = document.getElementById('deleteField');
+if (deleteBtn) {
+    deleteBtn.addEventListener('click', () => {
+        if (!selectedFieldName) return;
+        currentFields = currentFields.filter(f => f.name !== selectedFieldName);
+        renderPdf(); clearSelection();
+    });
+}
 
-// Dibujar
-document.getElementById('addFieldBtn').addEventListener('click', () => {
-    isDrawingMode = !isDrawingMode;
-    document.body.style.cursor = isDrawingMode ? 'crosshair' : 'default';
-});
+const helpBtn = document.getElementById('helpBtn');
+if (helpBtn) {
+    helpBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tt = document.getElementById('helpTooltip');
+        if (tt) tt.style.display = tt.style.display === 'block' ? 'none' : 'block';
+    });
+}
+
+// ==========================================
+// DIBUJAR CAMPOS NUEVOS
+// ==========================================
+const addFieldBtn = document.getElementById('addFieldBtn');
+if (addFieldBtn) {
+    addFieldBtn.addEventListener('click', () => {
+        isDrawingMode = !isDrawingMode;
+        document.body.style.cursor = isDrawingMode ? 'crosshair' : 'default';
+        addFieldBtn.classList.toggle('active', isDrawingMode);
+    });
+}
 
 function setupDrawingEvents(pageDiv, pageIndex) {
     pageDiv.addEventListener('mousedown', (e) => {
@@ -316,7 +363,12 @@ function setupDrawingEvents(pageDiv, pageIndex) {
         isDrawing = true;
         
         let box = document.getElementById('tempDrawBox');
-        if (!box) { box = document.createElement('div'); box.id = 'tempDrawBox'; box.style.cssText = 'position:absolute;border:2px dashed #ff6b00;background:rgba(255,107,0,0.2);pointer-events:none;'; pageDiv.appendChild(box); }
+        if (!box) { 
+            box = document.createElement('div'); 
+            box.id = 'tempDrawBox'; 
+            box.style.cssText = 'position:absolute;border:2px dashed #ff6b00;background:rgba(255,107,0,0.2);pointer-events:none;z-index:100;'; 
+            pageDiv.appendChild(box); 
+        }
         box.style.left = drawStartX + 'px'; box.style.top = drawStartY + 'px'; box.style.width = '0px'; box.style.height = '0px'; box.style.display = 'block';
     });
     pageDiv.addEventListener('mousemove', (e) => {
@@ -337,17 +389,20 @@ function setupDrawingEvents(pageDiv, pageIndex) {
             const newField = {
                 page: pageIndex, name: `manual_${Date.now()}`, type: 'text', type_input: 'text',
                 rect: [parseFloat(box.style.left)/currentScale, parseFloat(box.style.top)/currentScale, (parseFloat(box.style.left)+w)/currentScale, (parseFloat(box.style.top)+h)/currentScale],
-                max_len: 0, font_size: 10, align: 'left', show_lines: false
+                max_len: 0, font_size: 10, align: 'left'
             };
             currentFields.push(newField);
             renderPdf(); selectField(newField.name);
             isDrawingMode = false; document.body.style.cursor = 'default';
+            addFieldBtn.classList.remove('active');
         }
         box.style.display = 'none';
     });
 }
 
-// Arrastrar
+// ==========================================
+// ARRASTRAR CAMPOS
+// ==========================================
 let dragEl, dragField, startX, startY, startL, startT;
 function makeDraggable(el, field) {
     el.addEventListener('mousedown', (e) => {
@@ -361,6 +416,13 @@ document.addEventListener('mousemove', (e) => {
     if (!dragEl) return;
     dragEl.style.left = (startL + e.clientX - startX) + 'px';
     dragEl.style.top = (startT + e.clientY - startY) + 'px';
+    
+    if (floatingToolbar.style.display === 'flex') {
+        const rect = dragEl.getBoundingClientRect();
+        let topPos = rect.top; if (topPos < 200) topPos = 200;
+        floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px';
+        floatingToolbar.style.top = topPos + 'px';
+    }
 });
 document.addEventListener('mouseup', () => {
     if (!dragEl) return;
@@ -371,161 +433,61 @@ document.addEventListener('mouseup', () => {
     dragEl = null; dragField = null;
 });
 
-// Guardar
-document.getElementById('saveBtn').addEventListener('click', async () => {
-    if (!currentSession) return;
-    const updates = currentFields.map(f => ({ 
-        name: f.name, rect: f.rect, page: f.page, max_len: f.max_len || 0,
-        font_size: f.font_size || 10, align: f.align || 'left', type_input: f.type_input || 'text', show_lines: f.show_lines !== false
-    }));
-    
-    try {
-        const res = await fetch(API_URL + '/api/session/' + currentSession + '/update', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ updates })
-        });
-        if (!res.ok) throw new Error('Error al guardar');
-        alert('✅ Cambios guardados correctamente');
-        downloadBtn.href = API_URL + '/api/session/' + currentSession + '/download';
-        downloadBtn.style.display = 'inline-block';
-        updateStepper(4);
-    } catch (e) { alert('❌ Error al guardar'); }
+// ==========================================
+// MENÚ HAMBURGUESA Y GUARDADO
+// ==========================================
+const hamburgerBtn = document.getElementById('hamburgerBtn');
+if (hamburgerBtn) {
+    hamburgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = document.getElementById('hamburgerDropdown');
+        if (dropdown) dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+    });
+}
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('hamburgerDropdown');
+    if (dropdown && dropdown.style.display === 'flex' && !e.target.closest('#hamburgerMenu')) {
+        dropdown.style.display = 'none';
+    }
 });
 
-document.getElementById('toggleFields').addEventListener('click', () => {
-    const isHidden = document.querySelectorAll('.field-rect')[0]?.style.display === 'none';
-    document.querySelectorAll('.field-rect').forEach(el => el.style.display = isHidden ? 'block' : 'none');
-});
+const saveBtn = document.getElementById('saveBtn');
+if (saveBtn) {
+    saveBtn.addEventListener('click', async () => {
+        if (!currentSession) return;
+        const updates = currentFields.map(f => ({ 
+            name: f.name, rect: f.rect, page: f.page, max_len: f.max_len || 0,
+            font_size: f.font_size || 10, align: f.align || 'left', type_input: f.type_input || 'text'
+        }));
+        
+        try {
+            const res = await fetch(API_URL + '/api/session/' + currentSession + '/update', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ updates })
+            });
+            if (!res.ok) throw new Error('Error al guardar');
+            alert('✅ Cambios guardados correctamente');
+            const dlBtn = document.getElementById('downloadBtn');
+            if (dlBtn) {
+                dlBtn.href = API_URL + '/api/session/' + currentSession + '/download';
+                dlBtn.style.display = 'block';
+            }
+            updateStepper(4);
+        } catch (e) { alert('❌ Error al guardar'); }
+    });
+}
 
+const resetBtn = document.getElementById('resetBtn');
+if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+        if (confirm('¿Estás seguro de reiniciar? Perderás los cambios.')) {
+            window.location.reload();
+        }
+    });
+}
 
 window.addEventListener('resize', () => {
     if (pdfDoc && editorView.style.display !== 'none') {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => { renderPdf(); }, 300);
-    }
-});
-
-
-
-// Evento para el botón de zoom
-document.getElementById('zoomBtn').addEventListener('click', () => {
-    isZoomed = !isZoomed;
-    const btn = document.getElementById('zoomBtn');
-    
-    // Cambiar icono para indicar el estado
-    btn.innerHTML = isZoomed ? '🔍 -' : '🔍 +';
-    
-    // Guardar la posición actual del scroll para no perder el lugar
-    const pdfContainer = document.querySelector('.pdf-container');
-    const scrollY = pdfContainer.scrollTop;
-    
-    renderPdf().then(() => {
-        // Restaurar la posición (o centrar un poco)
-        pdfContainer.scrollTop = scrollY; 
-    });
-});
-
-
-// ==========================================
-// BARRA FLOTANTE Y ATAJOS DE EDICIÓN (RESTAURADO)
-// ==========================================
-const floatingToolbar = document.createElement('div');
-floatingToolbar.id = 'floatingToolbar';
-floatingToolbar.innerHTML = `
-    <button id="ft-split" title="Separar texto en celdas">.X</button>
-    <button id="ft-dup" title="Duplicar (Ctrl+D)">⧉</button>
-    <button id="ft-del" class="danger" title="Eliminar (Suprimir)">🗑️</button>
-`;
-document.body.appendChild(floatingToolbar);
-
-// Botón .X (Separar celdas)
-
-document.getElementById('ft-split').addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!selectedFieldName) return;
-    
-    // 1. Asegurarnos de que el menú inferior esté abierto
-    bottomGlassBar.classList.add('active');
-    
-    // 2. Ocultar la barra flotante y el botón de zoom temporalmente
-    document.getElementById('floatingToolbar').style.display = 'none';
-    if (zoomBtn) zoomBtn.style.display = 'none';
-    
-    // 3. Mostrar las propiedades si estaban ocultas
-    fieldProperties.style.display = 'flex';
-    
-    // 4. Poner el foco en el input de celdas para que el usuario escriba directamente
-    const cellsInput = document.getElementById('propCells');
-    cellsInput.focus();
-    cellsInput.select(); // Selecciona el texto actual para que se sobrescriba fácil
-});
-
-
-// Botón ⧉ (Duplicar)
-document.getElementById('ft-dup').addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (!selectedFieldName) return;
-    const field = currentFields.find(f => f.name === selectedFieldName);
-    if (!field) return;
-    
-    const newField = JSON.parse(JSON.stringify(field));
-    newField.name = 'copy_' + Date.now();
-    newField.rect = [field.rect[0] + 15, field.rect[1] + 15, field.rect[2] + 15, field.rect[3] + 15];
-    
-    currentFields.push(newField);
-    renderPdf();
-    selectField(newField.name);
-    fieldCounter.textContent = currentFields.length + ' campos';
-});
-
-// Botón 🗑️ (Eliminar)
-document.getElementById('ft-del').addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (document.getElementById('deleteField')) document.getElementById('deleteField').click();
-});
-
-// Mostrar barra flotante al seleccionar un campo
-const originalSelectField = selectField;
-selectField = function(fieldName) {
-    originalSelectField(fieldName);
-    const el = document.querySelector(`[data-field-name="${CSS.escape(fieldName)}"]`);
-    if (el) {
-        const rect = el.getBoundingClientRect();
-        floatingToolbar.style.display = 'flex';
-        floatingToolbar.style.left = (rect.left + rect.width / 2 - floatingToolbar.offsetWidth / 2) + 'px';
-        floatingToolbar.style.top = (rect.top - 45) + 'px';
-    }
-};
-
-// Ocultar barra flotante al deseleccionar
-const originalClearSelection = clearSelection;
-clearSelection = function() {
-    originalClearSelection();
-    if (floatingToolbar) floatingToolbar.style.display = 'none';
-};
-
-// Mover la barra flotante cuando se arrastra un campo
-document.addEventListener('mousemove', () => {
-    if (dragEl && floatingToolbar.style.display === 'flex') {
-        const rect = dragEl.getBoundingClientRect();
-        floatingToolbar.style.left = (rect.left + rect.width / 2 - floatingToolbar.offsetWidth / 2) + 'px';
-        floatingToolbar.style.top = (rect.top - 45) + 'px';
-    }
-});
-
-// Atajos de teclado (Suprimir y Ctrl+D)
-document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
-    
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedFieldName) {
-        e.preventDefault();
-        const delBtn = document.getElementById('deleteField');
-        if (delBtn) delBtn.click();
-    }
-    
-    if (e.ctrlKey && e.key.toLowerCase() === 'd' && selectedFieldName) {
-        e.preventDefault();
-        const dupBtn = document.getElementById('ft-dup');
-        if (dupBtn) dupBtn.click();
     }
 });

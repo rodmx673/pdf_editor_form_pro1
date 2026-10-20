@@ -1,25 +1,8 @@
-/* === BASE Y MODO CLARO POR DEFECTO === */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background-color: #f5f5f7;
-    color: #1d1d1f;
-    transition: background-color 0.3s;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow-x: hidden;
-}
+body { font-family: -apple-system, sans-serif; background-color: #f5f5f7; color: #1d1d1f; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
 
-/* === HEADER BASE (LANDING PAGE) === */
-header {
-    text-align: center;
-    padding: 15px;
-    background: #ffffff;
-    border-bottom: 1px solid #eaeaea;
-    position: relative;
-    z-index: 10;
-}
+/* HEADER */
+header { text-align: center; padding: 15px; background: #ffffff; border-bottom: 1px solid #eaeaea; position: relative; z-index: 10; }
 .header-toggles { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; }
 .toggle-btn { background: #f0f0f5; border: none; padding: 6px 10px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 12px; color: #333; }
 .main-logo { max-width: 180px; margin-bottom: 15px; }
@@ -30,25 +13,10 @@ header {
 .step.active span:first-child { background: #0071e3; }
 .step-line { height: 2px; width: 15px; background: #d2d2d7; }
 
-/* === LANDING PAGE (SUBIR ARCHIVO) === */
+/* LANDING PAGE */
 .app-main { flex: 1; display: flex; flex-direction: column; }
 #uploadView { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 30px 15px; }
-.upload-area {
-    width: 100%; 
-    max-width: 380px; 
-    margin: 0 auto; /* Centrado forzado */
-    border: 2px dashed #d2d2d7; 
-    border-radius: 16px; 
-    background-color: #ffffff; 
-    padding: 40px 20px; 
-    text-align: center; 
-    cursor: pointer; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
+.upload-area { width: 100%; max-width: 380px; border: 2px dashed #d2d2d7; border-radius: 16px; background-color: #ffffff; padding: 40px 20px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
 .upload-area:hover { border-color: #0071e3; }
 .upload-icon { font-size: 32px; margin-bottom: 10px; }
 .upload-area p { font-size: 14px; color: #666; }
@@ -56,153 +24,118 @@ header {
 .app-icon-container img { width: 70px; height: 70px; border-radius: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); margin-bottom: 10px; }
 .app-branding span { font-size: 10px; font-weight: bold; letter-spacing: 1.5px; color: #888; }
 
-/* === MODO EDITOR (SOLO SE ACTIVA CON BODY.EDITING-MODE) === */
+/* EDITOR MODE */
 body.editing-mode { height: 100vh; overflow: hidden; }
 body.editing-mode .app-main { position: absolute; top: 0; left: 0; width: 100%; height: 100vh; }
-
-/* Header flotante de cristal para el editor */
-body.editing-mode header {
-    position: fixed; top: 0; left: 0; width: 100%;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    border-bottom: 1px solid rgba(0,0,0,0.1);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
+body.editing-mode header { position: fixed; top: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(0,0,0,0.1); transition: transform 0.4s; }
 body.editing-mode header.header-hidden { transform: translateY(-100%); }
 
-#editorView { flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-.pdf-container { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; padding: 15px; padding-top: 130px; padding-bottom: 150px; scroll-snap-type: y mandatory; transition: padding-top 0.3s ease; }
+#editorView { flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden; position: relative; }
+.pdf-container { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; padding: 15px; padding-top: 130px; padding-bottom: 50px; scroll-snap-type: y mandatory; transition: padding-top 0.3s ease; }
 body.header-hidden .pdf-container { padding-top: 15px; }
-
 .pdf-page { position: relative; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); background: white; border-radius: 8px; overflow: hidden; scroll-snap-align: center; max-width: 100%; width: 100%; display: flex; justify-content: center; }
 .pdf-page canvas { max-width: 100%; height: auto !important; }
-
 .field-rect { position: absolute; border: 2px solid #0071e3; background-color: rgba(0, 113, 227, 0.1); cursor: move; }
 .field-rect.selected { border-color: #ff6b00; background-color: rgba(255, 107, 0, 0.2); z-index: 10; }
 
-/* Menú de Cristal (Footer) */
-.glass-bar {
-    position: fixed; bottom: 0; left: 0; width: 100%; height: 110px;
-    background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(0,0,0,0.1); border-radius: 20px 20px 0 0;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.1); z-index: 1000;
-    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex; flex-direction: column; justify-content: center;
-}
-.glass-bar.active { transform: translateY(0); }
-.close-glass { position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 16px; font-weight: bold; color: #888; cursor: pointer; }
-.carousel-content { display: flex; align-items: center; overflow-x: auto; gap: 15px; padding: 0 20px; height: 100%; }
-.carousel-content::-webkit-scrollbar { display: none; }
-.carousel-item { display: flex; flex-direction: column; flex-shrink: 0; justify-content: center; }
-.carousel-item label { font-size: 10px; color: #888; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
-.carousel-item input, .carousel-item select { padding: 6px; border-radius: 6px; border: 1px solid #ccc; font-size: 13px; }
-.carousel-separator { width: 2px; height: 50px; background: #ddd; margin: 0 10px; flex-shrink: 0; }
-.btn-tool { padding: 8px 15px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 500; font-size: 13px; white-space: nowrap; text-decoration: none; color: #333; }
+/* MENÚ HAMBURGUESA */
+#hamburgerMenu { display: none; position: absolute; top: 15px; right: 15px; z-index: 1005; }
+#hamburgerBtn { background: #f0f0f5; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+#hamburgerDropdown { display: none; position: absolute; top: 50px; right: 0; background: white; border: 1px solid #eaeaea; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); padding: 10px; min-width: 180px; flex-direction: column; gap: 8px; }
+
+/* POPOVER FLOTANTE */
+.floating-popover { position: fixed; display: none; flex-direction: column; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 12px; z-index: 10000; width: 320px; transform: translate(-50%, -100%); margin-top: -10px; }
+.popover-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+#popoverTitle { font-size: 12px; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.icon-btn { background: #f0f0f5; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; color: #555; display: flex; align-items: center; justify-content: center; }
+#helpTooltip { display: none; background: #f8f8fa; padding: 10px; border-radius: 8px; font-size: 12px; color: #666; margin-bottom: 10px; }
+#fieldProperties { display: flex; flex-wrap: wrap; gap: 10px; }
+.prop-item { display: flex; flex-direction: column; flex: 1; min-width: 60px; }
+.prop-item label { font-size: 10px; color: #888; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
+.prop-item input, .prop-item select { padding: 5px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px; width: 100%; }
+
+/* BOTONES FLOTANTES (FAB) */
+.zoom-fab, .fab-pencil { position: fixed; right: 20px; width: 50px; height: 50px; border-radius: 50%; color: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 900; font-size: 20px; cursor: pointer; display: none; align-items: center; justify-content: center; transition: transform 0.2s; }
+body.editing-mode .zoom-fab, body.editing-mode .fab-pencil { display: flex; }
+.zoom-fab { bottom: 80px; background: rgba(0, 113, 227, 0.9); }
+.fab-pencil { bottom: 140px; background: #ff6b00; }
+.fab-pencil.active { background: #28a745; box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); }
+
+/* BOTONES COMUNES */
+.btn-tool { padding: 8px 15px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 500; font-size: 13px; white-space: nowrap; color: #333; display: inline-block; text-align: center; text-decoration: none;}
 .btn-primary { background: #0071e3; color: white; border-color: #0071e3; }
 .btn-success { background: #28a745; color: white; border-color: #28a745; }
-.btn-danger { background: #dc3545; color: white; border-color: #dc3545; margin-top: 15px; }
+.btn-danger { background: #dc3545; color: white; border-color: #dc3545; }
 
-/* === MODO OSCURO INTEGRAL === */
+/* MODO OSCURO */
 body.dark-mode { background-color: #121212; color: #e5e5ea; }
 body.dark-mode header { background: rgba(28, 28, 30, 0.85); border-bottom: 1px solid #333; }
 body.dark-mode .toggle-btn { background: #2c2c2e; color: white; }
-body.dark-mode .upload-area {
-    width: 100%; 
-    max-width: 380px; 
-    margin: 0 auto; /* Centrado forzado */
-    border: 2px dashed #d2d2d7; 
-    border-radius: 16px; 
-    background-color: #ffffff; 
-    padding: 40px 20px; 
-    text-align: center; 
-    cursor: pointer; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
+body.dark-mode .upload-area { background: #1c1c1e; border-color: #444; }
 body.dark-mode .upload-area p { color: #aaa; }
-body.dark-mode .glass-bar { background: rgba(28, 28, 30, 0.85); border-top: 1px solid rgba(255,255,255,0.1); }
+body.dark-mode #hamburgerBtn, body.dark-mode #hamburgerDropdown { background: #1c1c1e; border-color: #333; }
 body.dark-mode .btn-tool { background: #2c2c2e; border-color: #444; color: white; }
-body.dark-mode .carousel-item input, body.dark-mode .carousel-item select { background: #222; border-color: #444; color: white; }
+body.dark-mode .floating-popover { background: rgba(28, 28, 30, 0.95); border-color: #444; }
+body.dark-mode #popoverTitle { color: #eee; }
+body.dark-mode .icon-btn { background: #333; color: #fff; }
+body.dark-mode .prop-item input, body.dark-mode .prop-item select { background: #222; border-color: #444; color: #fff; }
+body.dark-mode #helpTooltip { background: #333; color: #ccc; }
 
 /* ==========================================
-   BOTÓN DE ZOOM (FLOATING ACTION BUTTON)
-   ========================================== */
-.zoom-fab { display: none;
-    position: fixed;
-    bottom: 130px; /* Justo encima del menú de cristal */
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: rgba(0, 113, 227, 0.9);
-    color: white;
-    border: none;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    z-index: 900;
-    font-size: 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s, background 0.2s;
-}
-
-.zoom-fab:hover { transform: scale(1.1); }
-
-body.dark-mode .zoom-fab { display: none;
-    background: rgba(255, 107, 0, 0.9);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-}
-
-/* Clase que se añade al contenedor cuando hay zoom */
-.pdf-container.zoomed {
-    overflow-x: auto !important; /* Permite deslizar a los lados */
-    align-items: flex-start !important; /* Alinea a la izquierda para que el scroll funcione */
-}
-
-/* Mostrar el botón de zoom SOLO en la página de edición */
-body.editing-mode #zoomBtn {
-    display: flex !important;
-}
-
-
-/* ==========================================
-   EFECTO DE CARGA (RECUADRO Y ANILLO NARANJA)
+   EFECTO DE CARGA (ANILLO Y RECUADRO NARANJA)
    ========================================== */
 @keyframes spin-orange {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
-/* Preparamos el contenedor del icono para que el anillo gire alrededor */
-.app-icon-container {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-    border-radius: 50%;
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 10px rgba(255, 107, 0, 0.4); }
+    50% { box-shadow: 0 0 30px rgba(255, 107, 0, 0.9); }
+    100% { box-shadow: 0 0 10px rgba(255, 107, 0, 0.4); }
 }
 
-/* El anillo giratorio (remolino) */
+/* Contenedor del icono para el anillo */
+.app-icon-container {
+    position: relative;
+    width: 120px !important;
+    height: 120px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 15px !important;
+    box-sizing: border-box;
+    border-radius: 50%;
+    margin: 40px auto 0 auto !important;
+    transition: all 0.3s ease;
+}
+
+.app-icon-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
+}
+
+/* El anillo de luz giratorio */
 .app-icon-container.processing::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    border: 4px solid #ff6b00; /* Naranja de la marca */
-    border-top-color: transparent; /* Deja un hueco para el efecto remolino */
     border-radius: 50%;
-    animation: spin-orange 1s linear infinite;
+    background: conic-gradient(from 0deg, transparent 0%, rgba(255, 107, 0, 0.1) 40%, #ff6b00 90%, #ff6b00 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 8px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 8px));
+    animation: spin-orange 1.2s linear infinite, pulse-glow 2s ease-in-out infinite;
+    z-index: 1;
 }
 
-/* El recuadro naranja cuando está analizando */
+/* Recuadro naranja al procesar */
 #uploadArea.processing {
-    background-color: rgba(255, 107, 0, 0.08) !important;
+    background-color: rgba(255, 107, 0, 0.05) !important;
     border: 2px dashed #ff6b00 !important;
-    color: #ff6b00 !important;
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.2);
 }
 
 #uploadArea.processing p {
@@ -210,54 +143,41 @@ body.editing-mode #zoomBtn {
     font-weight: bold;
 }
 
-/* Ajuste para modo oscuro */
+/* Recuadro naranja en modo oscuro */
 body.dark-mode #uploadArea.processing {
     background-color: rgba(255, 107, 0, 0.15) !important;
 }
 
 /* ==========================================
-   ESTILOS DE LA BARRA FLOTANTE (SHORTCUTS)
+   CORRECCIÓN: BOTÓN HAMBURGUESA Y DROPDOWN
    ========================================== */
-#floatingToolbar {
-    position: fixed;
-    display: none;
+
+/* Modo Claro */
+#hamburgerBtn {
     background: #ffffff;
-    border: 1px solid #d2d2d7;
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    padding: 4px;
-    z-index: 9999;
-    gap: 4px;
-    align-items: center;
+    color: #333333;
+    border: 1px solid #eaeaea;
 }
-
-#floatingToolbar button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: bold;
-    color: #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s;
+#hamburgerDropdown {
+    background: #ffffff;
+    border: 1px solid #eaeaea;
 }
-
-#floatingToolbar button:hover {
-    background: #f0f0f5;
-}
-
-#floatingToolbar button#ft-split { color: #0071e3; font-size: 14px; }
-#floatingToolbar button.danger:hover { background: #ffe5e5; color: #dc3545; }
 
 /* Modo Oscuro */
-body.dark-mode #floatingToolbar {
+body.dark-mode #hamburgerBtn {
     background: #2c2c2e;
-    border-color: #444;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    color: #ffffff;
+    border: 1px solid #444;
 }
-body.dark-mode #floatingToolbar button { color: #fff; }
-body.dark-mode #floatingToolbar button:hover { background: #3a3a3c; }
+body.dark-mode #hamburgerDropdown {
+    background: #1c1c1e;
+    border: 1px solid #444;
+}
+body.dark-mode #hamburgerDropdown .btn-tool {
+    background: #2c2c2e;
+    color: #ffffff;
+    border: 1px solid #444;
+}
+body.dark-mode #hamburgerDropdown .btn-tool:hover {
+    background: #3a3a3c;
+}
