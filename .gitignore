@@ -20,3 +20,7 @@ cloudflared.deb
 *.log
 .env
 .vscode/
+api/
+server.js
+package.json
+package-lock.json
