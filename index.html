@@ -29,48 +29,37 @@
 </header>
 
 <main class="app-main">
-    <!-- VISTA 1: SUBIR ARCHIVO -->
     <div id="uploadView" class="view">
         <label class="upload-area" id="uploadArea">
             <input type="file" id="fileInput" accept=".pdf" style="position: absolute; opacity: 0; width: 0; height: 0;">
             <div class="upload-icon">📄</div>
             <p>Arrastra tu PDF aquí o haz clic para seleccionar</p>
         </label>
-        
         <div class="app-branding">
-            <div class="app-icon-container" id="appIconSpinner">
-                <img src="app-icon.png" alt="App Icon">
-            </div>
+            <div class="app-icon-container" id="appIconSpinner"><img src="app-icon.png" alt="App Icon"></div>
             <span>PDF EDIT FORMS APP</span>
         </div>
     </div>
     
-    <!-- VISTA 2: EDITOR -->
     <div id="editorView" class="view" style="display: none;">
-        
-        <!-- MENÚ HAMBURGUESA (Arriba a la derecha) -->
         <div id="hamburgerMenu">
             <button id="hamburgerBtn">☰</button>
             <div id="hamburgerDropdown">
+                <button id="fillModeBtn" class="btn-tool" style="width: 100%; text-align: left; font-weight: bold; color: #0071e3;">✍️ Modo Llenado</button>
                 <button id="saveBtn" class="btn-tool btn-primary" style="width: 100%; text-align: left;">💾 Guardar</button>
-                <a id="downloadBtn" class="btn-tool btn-success" style="display: none; width: 100%; text-align: left; box-sizing: border-box;">⬇ Descargar</a>
+                <a id="downloadBtn" class="btn-tool btn-success" style="display: none; width: 100%; text-align: left; box-sizing: border-box;">⬇ Descargar Lleno</a>
                 <button id="resetBtn" class="btn-tool" style="width: 100%; text-align: left;">↺ Reiniciar</button>
                 <button id="toggleHeaderBtn" class="btn-tool" style="width: 100%; text-align: left;">👁 Header</button>
             </div>
         </div>
 
-        <!-- CONTENEDOR DEL PDF -->
-        <div class="pdf-container" id="pdfContainer">
-            <div id="pdfPages"></div>
-        </div>
+        <div class="pdf-container" id="pdfContainer"><div id="pdfPages"></div></div>
         
-        <!-- BOTONES FLOTANTES -->
         <button id="zoomBtn" class="zoom-fab">🔍 +</button>
         <button id="addFieldBtn" class="fab-pencil" title="Dibujar campo manual">✏️</button>
     </div>
 </main>
 
-<!-- POPOVER FLOTANTE DE EDICIÓN -->
 <div id="floatingToolbar" class="floating-popover">
     <div class="popover-header">
         <span id="popoverTitle">Editar Campo</span>
@@ -82,17 +71,14 @@
     
     <div id="helpTooltip">
         <strong>Guía rápida:</strong><br>
-        • Si necesitas dividir el texto (ej. CURP o NIP), usa la opción <strong>Celdas</strong>.
+        • Usa <strong>Celdas</strong> para dividir el texto (ej. CURP o NIP).
         • Para dibujar un campo desde cero, usa el botón del <strong>Lápiz</strong> (✏️).
     </div>
 
     <div id="fieldProperties">
         <div class="prop-item text-only-option">
             <label>Tipo</label>
-            <select id="propType">
-                <option value="text">Texto</option>
-                <option value="number">Número</option>
-            </select>
+            <select id="propType"><option value="text">Texto</option><option value="number">Número</option><option value="checkbox">Checkbox</option></select>
         </div>
         <div class="prop-item text-only-option">
             <label>Celdas</label>
@@ -104,13 +90,8 @@
         </div>
         <div class="prop-item text-only-option">
             <label>Alinear</label>
-            <select id="propAlign">
-                <option value="left">Izquierda</option>
-                <option value="center">Centro</option>
-                <option value="right">Derecha</option>
-            </select>
+            <select id="propAlign"><option value="left">Izquierda</option><option value="center">Centro</option><option value="right">Derecha</option></select>
         </div>
-        
         <div class="prop-item" style="margin-left: auto; min-width: 80px;">
             <label style="opacity: 0;">.</label>
             <button id="deleteField" class="btn-tool btn-danger" style="margin-top: 0;">🗑️ Borrar</button>
@@ -121,4 +102,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-

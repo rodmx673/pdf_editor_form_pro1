@@ -181,3 +181,11 @@ body.dark-mode #hamburgerDropdown .btn-tool {
 body.dark-mode #hamburgerDropdown .btn-tool:hover {
     background: #3a3a3c;
 }
+
+/* ==========================================
+   ESTILO PARA CAMPOS EDITADOS (NARANJA)
+   ========================================== */
+.field-rect.edited-field {
+    border: 2px solid #ff6b00 !important;
+    background-color: rgba(255, 107, 0, 0.15) !important;
+}
