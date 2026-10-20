@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://pdf.teclingoingles.com/api/$1"
+    }
+  ]
+}

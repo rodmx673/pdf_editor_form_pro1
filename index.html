@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PDF Edit Forms</title>
+    <link rel="icon" href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+
+<header>
+    <div class="header-toggles">
+        <button id="langToggle" class="toggle-btn">🇲🇽 ES</button>
+        <button id="themeToggle" class="toggle-btn">🌙</button>
+    </div>
+
+    <img src="logo.png" alt="pdfeditforms.com" class="main-logo">
+    
+    <div id="stepper" class="stepper-container">
+        <div class="step active" id="step-1"><span>1</span> <span data-i18n="step1">Subir</span></div>
+        <div class="step-line"></div>
+        <div class="step" id="step-2"><span>2</span> <span data-i18n="step2">Procesar</span></div>
+        <div class="step-line"></div>
+        <div class="step" id="step-3"><span>3</span> <span data-i18n="step3">Editar</span></div>
+        <div class="step-line"></div>
+        <div class="step" id="step-4"><span>4</span> <span data-i18n="step4">Descargar</span></div>
+    </div>
+</header>
+
+<main class="app-main">
+    <div id="uploadView" class="view">
+        <label class="upload-area" id="uploadArea" for="fileInput">
+            <div class="upload-icon">📄</div>
+            <p data-i18n="dragDrop">Arrastra tu PDF aquí o haz clic para seleccionar</p>
+            <input type="file" id="fileInput" accept=".pdf" style="display:none">
+        </label>
+        
+        <div class="app-branding">
+            <div class="app-icon-container" id="appIconSpinner">
+                <img src="app-icon.png" alt="App Icon">
+            </div>
+            <span>PDF EDIT FORMS APP</span>
+        </div>
+        <div id="status" class="status-msg"></div>
+    </div>
+    
+    <div id="editorView" style="display: none;">
+        <div class="pdf-container" id="pdfContainer">
+            <div id="pdfPages"></div>
+        </div>
+        
+        <button id="zoomBtn" class="zoom-fab">🔍 +</button>
+        
+        <div id="bottomGlassBar" class="glass-bar">
+            <button id="closeBottomBar" class="close-glass">✕</button>
+            <div class="carousel-content">
+                <div class="carousel-item"><button id="toggleFields" class="btn-tool">👁 Campos</button></div>
+                <div class="carousel-item"><span id="fieldCounter" class="counter-text">0 campos</span></div>
+                <div class="carousel-item"><button id="resetBtn" class="btn-tool">↺ Reiniciar</button></div>
+                <div class="carousel-item"><button id="addFieldBtn" class="btn-tool btn-primary">+ Añadir Campo</button></div>
+                <div class="carousel-item"><button id="saveBtn" class="btn-tool btn-primary">💾 <span data-i18n="saveBtn">Guardar</span></button></div>
+                <div class="carousel-item"><a id="downloadBtn" class="btn-tool btn-success" style="display:none;">⬇ Descargar</a></div>
+                <div class="carousel-item"><button id="toggleHeaderBtn" class="btn-tool">☰ Header</button></div>
+                
+                <div class="carousel-separator"></div>
+
+                <div id="fieldProperties" class="properties-group" style="display: none;">
+                    <div class="carousel-item">
+                        <label>Nombre</label>
+                        <input type="text" id="propName" readonly>
+                    </div>
+                    <div class="carousel-item">
+                        <label>Tipo</label>
+                        <select id="propType"><option value="text">Texto libre</option></select>
+                    </div>
+                    <div class="carousel-item">
+                        <label>Celdas</label>
+                        <input type="number" id="propCells" value="0" min="0">
+                    </div>
+                    <div class="carousel-item">
+                        <label>Fuente</label>
+                        <input type="number" id="propFontSize" value="10">
+                    </div>
+                    <div class="carousel-item">
+                        <label>Alinear</label>
+                        <select id="propAlign">
+                            <option value="left">Izquierda</option>
+                            <option value="center">Centro</option>
+                            <option value="right">Derecha</option>
+                        </select>
+                    </div>
+                    <div class="carousel-item" style="flex-direction: row; align-items: center; gap: 5px; margin-top: 15px;">
+                        <input type="checkbox" id="propShowLines" style="width: 16px; height: 16px;">
+                        <label for="propShowLines" style="margin: 0; cursor: pointer;">Líneas PDF</label>
+                    </div>
+                    <div class="carousel-item">
+                        <button id="deleteField" class="btn-tool btn-danger">🗑️ Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
+
