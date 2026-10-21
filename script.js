@@ -118,17 +118,20 @@ async function renderPdf() {
 }
 document.getElementById('zoomBtn')?.addEventListener('click', () => { isZoomed = !isZoomed; const btn = document.getElementById('zoomBtn'); btn.innerHTML = isZoomed ? '🔍 100%' : '🔍 +'; btn.style.background = isZoomed ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 113, 227, 0.9)'; renderPdf(); });
 
-// CAMPOS Y MODO LLENADO
+// CAMPOS Y MODO LLENADO (AQUI ESTA LA MAGIA DE LAS CAJITAS)
 function createFieldElement(field, pageDiv) {
     const div = document.createElement('div'); div.className = 'field-rect'; 
-    if (field.max_len > 0) {
+    if (field.max_len > 0 && !isFillMode) {
         div.classList.add('comb');
         div.style.backgroundImage = `linear-gradient(to right, rgba(0, 113, 227, 0.6) 1px, transparent 1px)`;
         div.style.backgroundSize = `calc(100% / ${field.max_len}) 100%`;
-    } else { div.style.backgroundImage = 'none'; }
+    } else if (!isFillMode) { 
+        div.style.backgroundImage = 'none'; 
+    }
     if (field.is_edited) div.classList.add('edited-field');
     
-    const boxWidthPx = (field.rect[2] - field.rect[0]) * currentScale; const boxHeightPx = (field.rect[3] - field.rect[1]) * currentScale;
+    const boxWidthPx = (field.rect[2] - field.rect[0]) * currentScale; 
+    const boxHeightPx = (field.rect[3] - field.rect[1]) * currentScale;
     div.style.left = (field.rect[0] * currentScale) + 'px'; div.style.top = (field.rect[1] * currentScale) + 'px'; div.style.width = boxWidthPx + 'px'; div.style.height = boxHeightPx + 'px'; div.dataset.fieldName = field.name;
 
     if (isFillMode) {
@@ -137,70 +140,35 @@ function createFieldElement(field, pageDiv) {
             const input = document.createElement('input'); input.type = 'checkbox'; input.style.width = '100%'; input.style.height = '100%'; input.style.cursor = 'pointer'; input.checked = field.checked || false;
             input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); }); div.appendChild(input);
         } else if (field.max_len > 0) {
-            div.style.border = 'none'; 
-            div.style.background = 'transparent';
+            div.style.border = 'none'; div.style.background = 'transparent';
             const container = document.createElement('div');
-            container.style.display = 'flex';
-            container.style.width = '100%';
-            container.style.height = '100%';
-            container.style.gap = '0px'; 
-            
+            container.style.display = 'flex'; container.style.width = '100%'; container.style.height = '100%'; container.style.gap = '0px';
             for (let i = 0; i < field.max_len; i++) {
-                const cell = document.createElement('input');
-                cell.type = 'text';
-                cell.maxLength = 1; 
-                cell.style.flex = '1';
-                cell.style.width = '0'; 
-                cell.style.textAlign = 'center';
-                cell.style.border = '1px solid #ccc'; 
-                cell.style.background = 'rgba(255,255,255,0.8)';
-                cell.style.padding = '0';
-                cell.style.fontFamily = 'Courier';
+                const cell = document.createElement('input'); cell.type = 'text'; cell.maxLength = 1; 
+                cell.style.flex = '1'; cell.style.width = '0'; cell.style.textAlign = 'center';
+                cell.style.border = '1px solid #0071e3'; cell.style.background = 'rgba(255,255,255,0.9)';
+                cell.style.padding = '0'; cell.style.fontFamily = 'Courier'; cell.style.color = '#333';
                 cell.style.fontSize = Math.max(8, (field.font_size || 10) * currentScale) + 'px';
                 cell.value = field.value ? (field.value[i] || '') : '';
                 
                 cell.addEventListener('input', (e) => {
-                    if (e.target.value.length === 1 && i < field.max_len - 1) {
-                        container.children[i + 1].focus();
-                    }
+                    if (e.target.value.length === 1 && i < field.max_len - 1) container.children[i + 1].focus();
                     let val = '';
-                    for(let j = 0; j < field.max_len; j++) {
-                        val += container.children[j].value || ' ';
-                    }
-                    field.value = val.trimEnd();
-                    triggerAutoSave();
+                    for(let j = 0; j < field.max_len; j++) val += container.children[j].value || ' ';
+                    field.value = val.trimEnd(); triggerAutoSave();
                 });
-                
                 cell.addEventListener('keydown', (e) => {
-                    if (e.key === 'Backspace' && !e.target.value && i > 0) {
-                        container.children[i - 1].focus();
-                    }
+                    if (e.key === 'Backspace' && !e.target.value && i > 0) container.children[i - 1].focus();
                 });
                 container.appendChild(cell);
             }
             div.appendChild(container);
         } else {
-            div.style.border = '1px solid #ccc'; div.style.background = 'rgba(255,255,255,0.8)';
+            div.style.border = '1px solid #0071e3'; div.style.background = 'rgba(255,255,255,0.9)';
             const input = document.createElement('input'); input.type = 'text'; input.value = field.value || ''; input.maxLength = 524288;
-            input.style.width = '100%'; input.style.height = '100%'; input.style.border = 'none'; input.style.background = 'transparent'; input.style.padding = '0 2px';
-            input.style.fontSize = Math.max(8, (field.font_size || 10) * currentScale) + 'px'; 
-            input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); }); div.appendChild(input);
-        }
-        pageDiv.appendChild(div);
-    } else {} else {
-            div.style.border = '1px solid #ccc'; div.style.background = 'rgba(255,255,255,0.8)';
-            const input = document.createElement('input'); input.type = 'text'; input.value = field.value || ''; input.maxLength = field.max_len > 0 ? field.max_len : 524288;
-            input.style.width = '100%'; input.style.height = '100%'; input.style.border = 'none'; input.style.background = 'transparent'; input.style.padding = '0 2px';
-            
+            input.style.width = '100%'; input.style.height = '100%'; input.style.border = 'none'; input.style.background = 'transparent'; input.style.padding = '0 2px'; input.style.color = '#333';
             let finalSize = (field.font_size || 10) * currentScale;
             if (finalSize > boxHeightPx * 0.75) finalSize = boxHeightPx * 0.75;
-            
-            if (field.max_len > 0) { 
-                input.style.fontFamily = 'Courier'; input.style.textAlign = 'center'; input.style.letterSpacing = '0px'; 
-                input.style.backgroundImage = `linear-gradient(to right, rgba(0, 113, 227, 0.4) 1px, transparent 1px)`; 
-                input.style.backgroundSize = `calc(100% / ${field.max_len}) 100%`;
-                const cellWidthPx = boxWidthPx / field.max_len; if (finalSize > cellWidthPx * 0.8) finalSize = cellWidthPx * 0.8; 
-            }
             input.style.fontSize = Math.max(8, finalSize) + 'px'; 
             input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); }); div.appendChild(input);
         }
