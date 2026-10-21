@@ -1,6 +1,65 @@
 try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
+
+// ==========================================
+// LÓGICA PARA ARRASTRAR EL POPOVER (DRAG & DROP)
+// ==========================================
+let isDraggingPopover = false;
+let popoverStartX, popoverStartY, popoverStartLeft, popoverStartTop;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const popover = document.getElementById('floatingToolbar');
+    const header = popover.querySelector('.popover-header');
+
+    if (header) {
+        // Mouse events
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return; 
+            isDraggingPopover = true;
+            const rect = popover.getBoundingClientRect();
+            popoverStartX = e.clientX;
+            popoverStartY = e.clientY;
+            popoverStartLeft = rect.left;
+            popoverStartTop = rect.top;
+            popover.style.transform = 'none'; // Desactivar el centrado automático
+        });
+
+        // Touch events
+        header.addEventListener('touchstart', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+            isDraggingPopover = true;
+            const rect = popover.getBoundingClientRect();
+            popoverStartX = e.touches[0].clientX;
+            popoverStartY = e.touches[0].clientY;
+            popoverStartLeft = rect.left;
+            popoverStartTop = rect.top;
+            popover.style.transform = 'none';
+        }, {passive: true});
+    }
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!isDraggingPopover) return;
+    const popover = document.getElementById('floatingToolbar');
+    const dx = e.clientX - popoverStartX;
+    const dy = e.clientY - popoverStartY;
+    popover.style.left = (popoverStartLeft + dx) + 'px';
+    popover.style.top = (popoverStartTop + dy) + 'px';
+});
+
+document.addEventListener('touchmove', (e) => {
+    if (!isDraggingPopover) return;
+    const popover = document.getElementById('floatingToolbar');
+    const dx = e.touches[0].clientX - popoverStartX;
+    const dy = e.touches[0].clientY - popoverStartY;
+    popover.style.left = (popoverStartLeft + dx) + 'px';
+    popover.style.top = (popoverStartTop + dy) + 'px';
+}, {passive: true});
+
+document.addEventListener('mouseup', () => { isDraggingPopover = false; });
+document.addEventListener('touchend', () => { isDraggingPopover = false; });
+
 let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 
 // HEADER Y TEMA
@@ -160,16 +219,18 @@ document.getElementById('hamburgerBtn')?.addEventListener('click', (e) => { e.st
 document.addEventListener('click', (e) => { const dropdown = document.getElementById('hamburgerDropdown'); if (dropdown && dropdown.style.display === 'flex' && !e.target.closest('#hamburgerMenu')) dropdown.style.display = 'none'; });
 document.getElementById('resetBtn')?.addEventListener('click', () => { if (confirm('¿Reiniciar? Perderás los cambios.')) window.location.reload(); });
 
-function selectField(fieldName) {
-    selectedFieldName = fieldName; const field = currentFields.find(f => f.name === fieldName); if (!field) return;
-    document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('selected')); const el = document.querySelector(`[data-field-name="${CSS.escape(fieldName)}"]`); if (el) el.classList.add('selected');
-    document.getElementById('popoverTitle').textContent = field.name.substring(0, 20);
-    document.getElementById('propType').value = field.type_input || 'text'; document.getElementById('propCells').value = field.max_len || 0; document.getElementById('propFontSize').value = field.font_size || 10; document.getElementById('propAlign').value = field.align || 'left';
-    const isCheckbox = field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'));
-    document.querySelectorAll('.text-only-option').forEach(opt => { opt.style.display = isCheckbox ? 'none' : 'flex'; });
-    floatingToolbar.style.display = 'flex'; if (document.getElementById('zoomBtn')) document.getElementById('zoomBtn').style.display = 'none'; if (document.getElementById('addFieldBtn')) document.getElementById('addFieldBtn').style.display = 'none';
-    if (headerElement) { headerElement.classList.add('header-hidden'); document.body.classList.add('header-hidden'); clearTimeout(headerTimeout); }
-    if (el) { const rect = el.getBoundingClientRect(); let topPos = rect.top; if (topPos < 200) topPos = 200; floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px'; floatingToolbar.style.top = topPos + 'px'; }
+
+    if (el) { 
+        const rect = el.getBoundingClientRect(); 
+        let topPos = rect.top; 
+        // Si la caja está muy arriba, ponemos el popover abajo de la caja para que no se salga
+        if (topPos < 150) topPos = rect.bottom + 10; 
+        else topPos = topPos - 100; // Un poco arriba de la caja
+
+        floatingToolbar.style.transform = 'translate(-50%, 0)'; // Volver a centrarlo
+        floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px';
+        floatingToolbar.style.top = topPos + 'px';
+    }
 }
 function clearSelection() { selectedFieldName = null; document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('selected')); floatingToolbar.style.display = 'none'; const helpTip = document.getElementById('helpTooltip'); if (helpTip) helpTip.style.display = 'none'; if (document.getElementById('zoomBtn') && document.body.classList.contains('editing-mode')) document.getElementById('zoomBtn').style.display = 'flex'; if (document.getElementById('addFieldBtn') && document.body.classList.contains('editing-mode')) document.getElementById('addFieldBtn').style.display = 'flex'; }
 document.getElementById('closePopover')?.addEventListener('click', clearSelection);
