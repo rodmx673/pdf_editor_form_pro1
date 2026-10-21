@@ -1,29 +1,6 @@
 try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
 
-// ==========================================
-// SISTEMA DE NOTIFICACIONES TOAST
-// ==========================================
-function showToast(message, type) {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    let icon = 'ℹ️';
-    if (type === 'optimal') icon = '🌟';
-    if (type === 'low') icon = '⚠️';
-    if (type === 'medium' || type === 'high') icon = '🔍';
-    
-    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('hiding');
-        setTimeout(() => toast.remove(), 300);
-    }, 5000); // 5 segundos visible
-}
-
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
 let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 
@@ -31,7 +8,7 @@ let selectedFile = null, currentSession = null, currentFields = [], selectedFiel
 let isDraggingPopover = false, popoverStartX, popoverStartY, popoverStartLeft, popoverStartTop;
 document.addEventListener('DOMContentLoaded', () => {
     const popover = document.getElementById('floatingToolbar');
-    const header = popover.querySelector('.popover-header');
+    const header = popover ? popover.querySelector('.popover-header') : null;
     if (header) {
         header.addEventListener('mousedown', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return; 
@@ -81,47 +58,26 @@ if (uploadArea) {
     uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#d2d2d7'; });
     uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.style.borderColor = '#d2d2d7'; if (e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]); });
 }
-function selectFile(file) { 
-    selectedFile = file; 
-    uploadArea.querySelector('p').textContent = '⏳ Analizando calidad del PDF...'; 
-    uploadArea.classList.add('processing'); 
-    const spinner = document.getElementById('appIconSpinner'); 
-    if (spinner) spinner.classList.add('processing'); 
-    updateStepper(2); 
-    setTimeout(() => { analizarYProcesar(); }, 500); 
-}
+function selectFile(file) { selectedFile = file; uploadArea.querySelector('p').textContent = '⏳ Analizando calidad del PDF...'; uploadArea.classList.add('processing'); const spinner = document.getElementById('appIconSpinner'); if (spinner) spinner.classList.add('processing'); updateStepper(2); setTimeout(() => { analizarYProcesar(); }, 500); }
 
 async function analizarYProcesar() {
     if (!selectedFile) return; 
-    const formData = new FormData(); 
-    formData.append('file', selectedFile);
-    
+    const formData = new FormData(); formData.append('file', selectedFile);
     try {
-        // PASO 1: ANALIZAR
         const resAnalyze = await fetch(API_URL + '/api/analyze', { method: 'POST', body: formData });
         if (!resAnalyze.ok) throw new Error('Error al analizar el PDF');
         const dataAnalyze = await resAnalyze.json();
         
         let continuar = true;
-        
-        // Si la calidad es baja, preguntar al usuario
         if (dataAnalyze.quality.status === 'low') {
             continuar = confirm(`⚠️ Advertencia: El documento parece ser de baja resolución (${dataAnalyze.quality.dpi} DPI).\n\nEl texto podría verse borroso. ¿Deseas continuar de todos modos?`);
         }
         
         if (!continuar) {
-            // Cancelar proceso y reiniciar UI
-            uploadArea.classList.remove('processing'); 
-            uploadArea.querySelector('p').textContent = 'Arrastra tu PDF aquí o haz clic para seleccionar'; 
-            const spinner = document.getElementById('appIconSpinner'); 
-            if (spinner) spinner.classList.remove('processing'); 
-            updateStepper(1);
-            return;
+            uploadArea.classList.remove('processing'); uploadArea.querySelector('p').textContent = 'Arrastra tu PDF aquí o haz clic para seleccionar'; const spinner = document.getElementById('appIconSpinner'); if (spinner) spinner.classList.remove('processing'); updateStepper(1); return;
         }
 
-        // PASO 2: PROCESAR (si el usuario aceptó o si la calidad es buena)
         uploadArea.querySelector('p').textContent = '⏳ Procesando documento con IA...';
-        
         const resProcess = await fetch(API_URL + '/api/process/' + dataAnalyze.session_id, { method: 'POST' });
         if (!resProcess.ok) throw new Error('Error al procesar el PDF');
         const dataProcess = await resProcess.json();
@@ -130,25 +86,14 @@ async function analizarYProcesar() {
         currentFields = dataProcess.fields.map(f => ({...f, type: f.type || 'text', font_size: 10, align: 'left', is_edited: false}));
         pdfDoc = await pdfjsLib.getDocument(API_URL + dataProcess.pdf_url).promise;
         
-        uploadView.style.display = 'none'; 
-        document.body.classList.add('editing-mode'); 
-        editorView.style.display = 'flex'; 
-        document.getElementById('hamburgerMenu').style.display = 'block'; 
-        showHeaderTemporarily();
-        await renderPdf(); 
-        updateStepper(3);
-        
+        uploadView.style.display = 'none'; document.body.classList.add('editing-mode'); editorView.style.display = 'flex'; document.getElementById('hamburgerMenu').style.display = 'block'; showHeaderTemporarily();
+        await renderPdf(); updateStepper(3);
     } catch (error) { 
-        alert("Error: " + error.message); 
-        uploadArea.classList.remove('processing'); 
-        uploadArea.querySelector('p').textContent = '❌ Error. Intenta de nuevo.'; 
-        const spinner = document.getElementById('appIconSpinner'); 
-        if (spinner) spinner.classList.remove('processing'); 
-        updateStepper(1); 
+        alert("Error: " + error.message); uploadArea.classList.remove('processing'); uploadArea.querySelector('p').textContent = '❌ Error. Intenta de nuevo.'; const spinner = document.getElementById('appIconSpinner'); if (spinner) spinner.classList.remove('processing'); updateStepper(1); 
     }
 }
 
-// RENDERIZADO Y ZOOM (ALTA CALIDAD Y SCROLL BLINDADO)
+// RENDERIZADO Y ZOOM
 async function renderPdf() {
     if (!pdfDoc) return; 
     const pdfContainer = document.querySelector('.pdf-container');
@@ -173,52 +118,38 @@ async function renderPdf() {
 }
 document.getElementById('zoomBtn')?.addEventListener('click', () => { isZoomed = !isZoomed; const btn = document.getElementById('zoomBtn'); btn.innerHTML = isZoomed ? '🔍 100%' : '🔍 +'; btn.style.background = isZoomed ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 113, 227, 0.9)'; renderPdf(); });
 
-// CAMPOS Y MODO LLENADO (CON AUTO-AJUSTE DE TEXTO)
+// CAMPOS Y MODO LLENADO
 function createFieldElement(field, pageDiv) {
-    const div = document.createElement('div'); div.className = 'field-rect'; if (field.max_len > 0) div.classList.add('comb'); if (field.is_edited) div.classList.add('edited-field');
+    const div = document.createElement('div'); div.className = 'field-rect'; 
+    if (field.max_len > 0) {
+        div.classList.add('comb');
+        div.style.backgroundImage = `linear-gradient(to right, rgba(0, 113, 227, 0.6) 1px, transparent 1px)`;
+        div.style.backgroundSize = `calc(100% / ${field.max_len}) 100%`;
+    } else { div.style.backgroundImage = 'none'; }
+    if (field.is_edited) div.classList.add('edited-field');
+    
     const boxWidthPx = (field.rect[2] - field.rect[0]) * currentScale; const boxHeightPx = (field.rect[3] - field.rect[1]) * currentScale;
     div.style.left = (field.rect[0] * currentScale) + 'px'; div.style.top = (field.rect[1] * currentScale) + 'px'; div.style.width = boxWidthPx + 'px'; div.style.height = boxHeightPx + 'px'; div.dataset.fieldName = field.name;
 
     if (isFillMode) {
-            if (field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'))) {
-                div.style.border = 'none'; div.style.background = 'transparent';
-                const input = document.createElement('input'); input.type = 'checkbox'; input.style.width = '100%'; input.style.height = '100%'; input.style.cursor = 'pointer'; input.checked = field.checked || false;
-                input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); }); div.appendChild(input);
-            } else {
-                div.style.border = '1px solid #ccc'; 
-                div.style.background = 'rgba(255,255,255,0.8)';
-                const input = document.createElement('input'); 
-                input.type = 'text'; 
-                input.value = field.value || ''; 
-                input.maxLength = field.max_len > 0 ? field.max_len : 524288;
-                input.style.width = '100%'; input.style.height = '100%'; input.style.border = 'none'; input.style.background = 'transparent'; input.style.padding = '0 2px';
-                
-                let finalSize = (field.font_size || 10) * currentScale;
-                if (finalSize > boxHeightPx * 0.75) finalSize = boxHeightPx * 0.75;
-                
-                if (field.max_len > 0) { 
-                    input.style.fontFamily = 'Courier'; 
-                    input.style.textAlign = 'center'; 
-                    input.style.letterSpacing = '0px'; 
-                    
-                    input.style.backgroundImage = `linear-gradient(to right, rgba(0, 113, 227, 0.4) 1px, transparent 1px)`; 
-                    input.style.backgroundSize = `calc(100% / ${field.max_len}) 100%`;
-                    
-                    const cellWidthPx = boxWidthPx / field.max_len; 
-                    if (finalSize > cellWidthPx * 0.8) finalSize = cellWidthPx * 0.8; 
-                }
-                input.style.fontSize = Math.max(8, finalSize) + 'px'; 
-                input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); }); 
-                div.appendChild(input);
-            }
-            pageDiv.appendChild(div);
+        if (field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'))) {
+            div.style.border = 'none'; div.style.background = 'transparent';
+            const input = document.createElement('input'); input.type = 'checkbox'; input.style.width = '100%'; input.style.height = '100%'; input.style.cursor = 'pointer'; input.checked = field.checked || false;
+            input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); }); div.appendChild(input);
         } else {
             div.style.border = '1px solid #ccc'; div.style.background = 'rgba(255,255,255,0.8)';
             const input = document.createElement('input'); input.type = 'text'; input.value = field.value || ''; input.maxLength = field.max_len > 0 ? field.max_len : 524288;
             input.style.width = '100%'; input.style.height = '100%'; input.style.border = 'none'; input.style.background = 'transparent'; input.style.padding = '0 2px';
+            
             let finalSize = (field.font_size || 10) * currentScale;
             if (finalSize > boxHeightPx * 0.75) finalSize = boxHeightPx * 0.75;
-            if (field.max_len > 0) { input.style.fontFamily = 'Courier'; input.style.textAlign = 'center'; input.style.letterSpacing = '1px'; const cellWidthPx = boxWidthPx / field.max_len; if (finalSize > cellWidthPx * 0.8) finalSize = cellWidthPx * 0.8; }
+            
+            if (field.max_len > 0) { 
+                input.style.fontFamily = 'Courier'; input.style.textAlign = 'center'; input.style.letterSpacing = '0px'; 
+                input.style.backgroundImage = `linear-gradient(to right, rgba(0, 113, 227, 0.4) 1px, transparent 1px)`; 
+                input.style.backgroundSize = `calc(100% / ${field.max_len}) 100%`;
+                const cellWidthPx = boxWidthPx / field.max_len; if (finalSize > cellWidthPx * 0.8) finalSize = cellWidthPx * 0.8; 
+            }
             input.style.fontSize = Math.max(8, finalSize) + 'px'; 
             input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); }); div.appendChild(input);
         }
@@ -271,40 +202,14 @@ function selectField(fieldName) {
     document.querySelectorAll('.text-only-option').forEach(opt => { opt.style.display = isCheckbox ? 'none' : 'flex'; });
     floatingToolbar.style.display = 'flex'; if (document.getElementById('zoomBtn')) document.getElementById('zoomBtn').style.display = 'none'; if (document.getElementById('addFieldBtn')) document.getElementById('addFieldBtn').style.display = 'none';
     if (headerElement) { headerElement.classList.add('header-hidden'); document.body.classList.add('header-hidden'); clearTimeout(headerTimeout); }
-    
-    if (el) { 
-        const rect = el.getBoundingClientRect(); 
-        let topPos = rect.top; 
-        if (topPos < 150) topPos = rect.bottom + 10; 
-        else topPos = topPos - 100; 
-        floatingToolbar.style.transform = 'translate(-50%, 0)'; 
-        floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px';
-        floatingToolbar.style.top = topPos + 'px';
-    }
+    if (el) { const rect = el.getBoundingClientRect(); let topPos = rect.top; if (topPos < 150) topPos = rect.bottom + 10; else topPos = topPos - 100; floatingToolbar.style.transform = 'translate(-50%, 0)'; floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px'; floatingToolbar.style.top = topPos + 'px'; }
 }
 function clearSelection() { selectedFieldName = null; document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('selected')); floatingToolbar.style.display = 'none'; const helpTip = document.getElementById('helpTooltip'); if (helpTip) helpTip.style.display = 'none'; if (document.getElementById('zoomBtn') && document.body.classList.contains('editing-mode')) document.getElementById('zoomBtn').style.display = 'flex'; if (document.getElementById('addFieldBtn') && document.body.classList.contains('editing-mode')) document.getElementById('addFieldBtn').style.display = 'flex'; }
 document.getElementById('closePopover')?.addEventListener('click', clearSelection);
 document.addEventListener('mousedown', (e) => { if (floatingToolbar.style.display === 'flex' && !e.target.closest('.field-rect') && !e.target.closest('.floating-popover')) clearSelection(); });
 
 function markAsEdited(field) { field.is_edited = true; const el = document.querySelector(`[data-field-name="${CSS.escape(field.name)}"]`); if (el) el.classList.add('edited-field'); }
-document.getElementById('propCells')?.addEventListener('input', (e) => {
-    const f = currentFields.find(f => f.name === selectedFieldName);
-    if (f) {
-        f.max_len = parseInt(e.target.value) || 0;
-        const el = document.querySelector(`[data-field-name="${CSS.escape(f.name)}"]`);
-        if (el) {
-            if (f.max_len > 0) {
-                el.classList.add('comb');
-                el.style.backgroundImage = `linear-gradient(to right, rgba(0, 113, 227, 0.6) 1px, transparent 1px)`;
-                el.style.backgroundSize = `calc(100% / ${f.max_len}) 100%`;
-            } else {
-                el.classList.remove('comb');
-                el.style.backgroundImage = 'none';
-            }
-        }
-        markAsEdited(f);
-    }
-});
+document.getElementById('propCells')?.addEventListener('input', (e) => { const f = currentFields.find(f => f.name === selectedFieldName); if (f) { f.max_len = parseInt(e.target.value) || 0; const el = document.querySelector(`[data-field-name="${CSS.escape(f.name)}"]`); if (el) { if (f.max_len > 0) { el.classList.add('comb'); el.style.backgroundImage = `linear-gradient(to right, rgba(0, 113, 227, 0.6) 1px, transparent 1px)`; el.style.backgroundSize = `calc(100% / ${f.max_len}) 100%`; } else { el.classList.remove('comb'); el.style.backgroundImage = 'none'; } } markAsEdited(f); } });
 document.getElementById('propFontSize')?.addEventListener('input', (e) => { const f = currentFields.find(f => f.name === selectedFieldName); if (f) { f.font_size = parseInt(e.target.value) || 10; markAsEdited(f); } });
 document.getElementById('propAlign')?.addEventListener('change', (e) => { const f = currentFields.find(f => f.name === selectedFieldName); if (f) { f.align = e.target.value; markAsEdited(f); } });
 document.getElementById('propType')?.addEventListener('change', (e) => { const f = currentFields.find(f => f.name === selectedFieldName); if (f) { f.type_input = e.target.value; markAsEdited(f); } });
@@ -323,7 +228,3 @@ function makeDraggable(el, field) { el.addEventListener('mousedown', (e) => { if
 document.addEventListener('mousemove', (e) => { if (!dragEl) return; dragEl.style.left = (startL + e.clientX - startX) + 'px'; dragEl.style.top = (startT + e.clientY - startY) + 'px'; if (floatingToolbar.style.display === 'flex') { const rect = dragEl.getBoundingClientRect(); let topPos = rect.top; if (topPos < 150) topPos = rect.bottom + 10; else topPos = topPos - 100; floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px'; floatingToolbar.style.top = topPos + 'px'; } });
 document.addEventListener('mouseup', () => { if (!dragEl) return; const newX = parseFloat(dragEl.style.left) / currentScale; const newY = parseFloat(dragEl.style.top) / currentScale; const w = dragField.rect[2] - dragField.rect[0], h = dragField.rect[3] - dragField.rect[1]; dragField.rect = [newX, newY, newX + w, newY + h]; markAsEdited(dragField); dragEl = null; dragField = null; });
 window.addEventListener('resize', () => { if (pdfDoc && editorView.style.display !== 'none') { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(() => { renderPdf(); }, 300); } });
-
-
-
-
