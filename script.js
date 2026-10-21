@@ -136,7 +136,58 @@ function createFieldElement(field, pageDiv) {
             div.style.border = 'none'; div.style.background = 'transparent';
             const input = document.createElement('input'); input.type = 'checkbox'; input.style.width = '100%'; input.style.height = '100%'; input.style.cursor = 'pointer'; input.checked = field.checked || false;
             input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); }); div.appendChild(input);
+        } else if (field.max_len > 0) {
+            div.style.border = 'none'; 
+            div.style.background = 'transparent';
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.gap = '0px'; 
+            
+            for (let i = 0; i < field.max_len; i++) {
+                const cell = document.createElement('input');
+                cell.type = 'text';
+                cell.maxLength = 1; 
+                cell.style.flex = '1';
+                cell.style.width = '0'; 
+                cell.style.textAlign = 'center';
+                cell.style.border = '1px solid #ccc'; 
+                cell.style.background = 'rgba(255,255,255,0.8)';
+                cell.style.padding = '0';
+                cell.style.fontFamily = 'Courier';
+                cell.style.fontSize = Math.max(8, (field.font_size || 10) * currentScale) + 'px';
+                cell.value = field.value ? (field.value[i] || '') : '';
+                
+                cell.addEventListener('input', (e) => {
+                    if (e.target.value.length === 1 && i < field.max_len - 1) {
+                        container.children[i + 1].focus();
+                    }
+                    let val = '';
+                    for(let j = 0; j < field.max_len; j++) {
+                        val += container.children[j].value || ' ';
+                    }
+                    field.value = val.trimEnd();
+                    triggerAutoSave();
+                });
+                
+                cell.addEventListener('keydown', (e) => {
+                    if (e.key === 'Backspace' && !e.target.value && i > 0) {
+                        container.children[i - 1].focus();
+                    }
+                });
+                container.appendChild(cell);
+            }
+            div.appendChild(container);
         } else {
+            div.style.border = '1px solid #ccc'; div.style.background = 'rgba(255,255,255,0.8)';
+            const input = document.createElement('input'); input.type = 'text'; input.value = field.value || ''; input.maxLength = 524288;
+            input.style.width = '100%'; input.style.height = '100%'; input.style.border = 'none'; input.style.background = 'transparent'; input.style.padding = '0 2px';
+            input.style.fontSize = Math.max(8, (field.font_size || 10) * currentScale) + 'px'; 
+            input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); }); div.appendChild(input);
+        }
+        pageDiv.appendChild(div);
+    } else {} else {
             div.style.border = '1px solid #ccc'; div.style.background = 'rgba(255,255,255,0.8)';
             const input = document.createElement('input'); input.type = 'text'; input.value = field.value || ''; input.maxLength = field.max_len > 0 ? field.max_len : 524288;
             input.style.width = '100%'; input.style.height = '100%'; input.style.border = 'none'; input.style.background = 'transparent'; input.style.padding = '0 2px';
