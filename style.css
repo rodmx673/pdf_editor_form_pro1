@@ -299,3 +299,34 @@ body.dark-mode .icon-btn { background: #333; color: #fff; }
 body.dark-mode .prop-item input, body.dark-mode .prop-item select {
     background: #222; border-color: #444; color: #fff;
 }
+
+/* ==========================================
+   NOTIFICACIONES TOAST (CALIDAD DE PDF)
+   ========================================== */
+.toast {
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: slideUpFade 0.3s ease forwards;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 90vw;
+}
+.toast.optimal { background: #28a745; }
+.toast.low { background: #ff6b00; }
+.toast.medium, .toast.high { background: #0071e3; }
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.toast.hiding {
+    animation: fadeOut 0.3s ease forwards;
+}
+@keyframes fadeOut {
+    to { opacity: 0; transform: translateY(10px); }
+}

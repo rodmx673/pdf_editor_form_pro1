@@ -1,5 +1,29 @@
 try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
+
+// ==========================================
+// SISTEMA DE NOTIFICACIONES TOAST
+// ==========================================
+function showToast(message, type) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    let icon = 'ℹ️';
+    if (type === 'optimal') icon = '🌟';
+    if (type === 'low') icon = '⚠️';
+    if (type === 'medium' || type === 'high') icon = '🔍';
+    
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => toast.remove(), 300);
+    }, 5000); // 5 segundos visible
+}
+
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
 let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 
@@ -57,18 +81,71 @@ if (uploadArea) {
     uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#d2d2d7'; });
     uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.style.borderColor = '#d2d2d7'; if (e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]); });
 }
-function selectFile(file) { selectedFile = file; uploadArea.querySelector('p').textContent = '⏳ Analizando PDF...'; uploadArea.classList.add('processing'); const spinner = document.getElementById('appIconSpinner'); if (spinner) spinner.classList.add('processing'); updateStepper(2); setTimeout(() => { ejecutarProcesamiento(); }, 500); }
+function selectFile(file) { 
+    selectedFile = file; 
+    uploadArea.querySelector('p').textContent = '⏳ Analizando calidad del PDF...'; 
+    uploadArea.classList.add('processing'); 
+    const spinner = document.getElementById('appIconSpinner'); 
+    if (spinner) spinner.classList.add('processing'); 
+    updateStepper(2); 
+    setTimeout(() => { analizarYProcesar(); }, 500); 
+}
 
-async function ejecutarProcesamiento() {
-    if (!selectedFile) return; const formData = new FormData(); formData.append('file', selectedFile);
+async function analizarYProcesar() {
+    if (!selectedFile) return; 
+    const formData = new FormData(); 
+    formData.append('file', selectedFile);
+    
     try {
-        const response = await fetch(API_URL + '/api/process', { method: 'POST', body: formData }); if (!response.ok) throw new Error('Error del servidor');
-        const data = await response.json(); currentSession = data.session_id;
-        currentFields = data.fields.map(f => ({...f, type: f.type || 'text', font_size: 10, align: 'left', is_edited: false}));
-        pdfDoc = await pdfjsLib.getDocument(API_URL + data.pdf_url).promise;
-        uploadView.style.display = 'none'; document.body.classList.add('editing-mode'); editorView.style.display = 'flex'; document.getElementById('hamburgerMenu').style.display = 'block'; showHeaderTemporarily();
-        await renderPdf(); updateStepper(3);
-    } catch (error) { alert("Error: " + error.message); uploadArea.classList.remove('processing'); uploadArea.querySelector('p').textContent = '❌ Error. Intenta de nuevo.'; const spinner = document.getElementById('appIconSpinner'); if (spinner) spinner.classList.remove('processing'); updateStepper(1); }
+        // PASO 1: ANALIZAR
+        const resAnalyze = await fetch(API_URL + '/api/analyze', { method: 'POST', body: formData });
+        if (!resAnalyze.ok) throw new Error('Error al analizar el PDF');
+        const dataAnalyze = await resAnalyze.json();
+        
+        let continuar = true;
+        
+        // Si la calidad es baja, preguntar al usuario
+        if (dataAnalyze.quality.status === 'low') {
+            continuar = confirm(`⚠️ Advertencia: El documento parece ser de baja resolución (${dataAnalyze.quality.dpi} DPI).\n\nEl texto podría verse borroso. ¿Deseas continuar de todos modos?`);
+        }
+        
+        if (!continuar) {
+            // Cancelar proceso y reiniciar UI
+            uploadArea.classList.remove('processing'); 
+            uploadArea.querySelector('p').textContent = 'Arrastra tu PDF aquí o haz clic para seleccionar'; 
+            const spinner = document.getElementById('appIconSpinner'); 
+            if (spinner) spinner.classList.remove('processing'); 
+            updateStepper(1);
+            return;
+        }
+
+        // PASO 2: PROCESAR (si el usuario aceptó o si la calidad es buena)
+        uploadArea.querySelector('p').textContent = '⏳ Procesando documento con IA...';
+        
+        const resProcess = await fetch(API_URL + '/api/process/' + dataAnalyze.session_id, { method: 'POST' });
+        if (!resProcess.ok) throw new Error('Error al procesar el PDF');
+        const dataProcess = await resProcess.json();
+        
+        currentSession = dataProcess.session_id;
+        currentFields = dataProcess.fields.map(f => ({...f, type: f.type || 'text', font_size: 10, align: 'left', is_edited: false}));
+        pdfDoc = await pdfjsLib.getDocument(API_URL + dataProcess.pdf_url).promise;
+        
+        uploadView.style.display = 'none'; 
+        document.body.classList.add('editing-mode'); 
+        editorView.style.display = 'flex'; 
+        document.getElementById('hamburgerMenu').style.display = 'block'; 
+        showHeaderTemporarily();
+        await renderPdf(); 
+        updateStepper(3);
+        
+    } catch (error) { 
+        alert("Error: " + error.message); 
+        uploadArea.classList.remove('processing'); 
+        uploadArea.querySelector('p').textContent = '❌ Error. Intenta de nuevo.'; 
+        const spinner = document.getElementById('appIconSpinner'); 
+        if (spinner) spinner.classList.remove('processing'); 
+        updateStepper(1); 
+    }
 }
 
 // RENDERIZADO Y ZOOM (ALTA CALIDAD Y SCROLL BLINDADO)
@@ -79,17 +156,17 @@ async function renderPdf() {
     pdfPages.innerHTML = '';
     const firstPage = await pdfDoc.getPage(1); const margin = window.innerWidth <= 768 ? 20 : 40; const containerWidth = pdfContainer.clientWidth - margin;
     const baseScale = Math.max(0.5, Math.min(2, containerWidth / firstPage.getViewport({ scale: 1 }).width)); currentScale = isZoomed ? baseScale * 2 : baseScale; if (isZoomed) pdfContainer.classList.add('zoomed'); else pdfContainer.classList.remove('zoomed');
-    const outputScale = window.devicePixelRatio || 1;
+    const outputScale = Math.max(window.devicePixelRatio || 1, 2);
 
     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
         const page = await pdfDoc.getPage(pageNum); const viewport = page.getViewport({ scale: currentScale }); const pageDiv = document.createElement('div');
         pageDiv.className = 'pdf-page'; pageDiv.dataset.pageNum = pageNum - 1; pageDiv.style.width = viewport.width + 'px'; pageDiv.style.height = viewport.height + 'px';
         const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
+        const renderContext = { canvasContext: context, transform: [outputScale, 0, 0, outputScale, 0, 0], viewport: viewport };
         canvas.width = Math.floor(viewport.width * outputScale); canvas.height = Math.floor(viewport.height * outputScale);
         canvas.style.width = Math.floor(viewport.width) + "px"; canvas.style.height = Math.floor(viewport.height) + "px";
         pageDiv.appendChild(canvas); pdfPages.appendChild(pageDiv);
-        const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
-        await page.render({ canvasContext: context, transform: transform, viewport }).promise;
+        await page.render(renderContext).promise;
         const pageFields = currentFields.filter(f => f.page === pageNum - 1); pageFields.forEach(field => createFieldElement(field, pageDiv)); setupDrawingEvents(pageDiv, pageNum - 1);
     }
     pdfContainer.scrollTop = scrollTop; 
@@ -103,10 +180,38 @@ function createFieldElement(field, pageDiv) {
     div.style.left = (field.rect[0] * currentScale) + 'px'; div.style.top = (field.rect[1] * currentScale) + 'px'; div.style.width = boxWidthPx + 'px'; div.style.height = boxHeightPx + 'px'; div.dataset.fieldName = field.name;
 
     if (isFillMode) {
-        if (field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'))) {
-            div.style.border = 'none'; div.style.background = 'transparent';
-            const input = document.createElement('input'); input.type = 'checkbox'; input.style.width = '100%'; input.style.height = '100%'; input.style.cursor = 'pointer'; input.checked = field.checked || false;
-            input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); }); div.appendChild(input);
+            if (field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'))) {
+                div.style.border = 'none'; div.style.background = 'transparent';
+                const input = document.createElement('input'); input.type = 'checkbox'; input.style.width = '100%'; input.style.height = '100%'; input.style.cursor = 'pointer'; input.checked = field.checked || false;
+                input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); }); div.appendChild(input);
+            } else {
+                div.style.border = '1px solid #ccc'; 
+                div.style.background = 'rgba(255,255,255,0.8)';
+                const input = document.createElement('input'); 
+                input.type = 'text'; 
+                input.value = field.value || ''; 
+                input.maxLength = field.max_len > 0 ? field.max_len : 524288;
+                input.style.width = '100%'; input.style.height = '100%'; input.style.border = 'none'; input.style.background = 'transparent'; input.style.padding = '0 2px';
+                
+                let finalSize = (field.font_size || 10) * currentScale;
+                if (finalSize > boxHeightPx * 0.75) finalSize = boxHeightPx * 0.75;
+                
+                if (field.max_len > 0) { 
+                    input.style.fontFamily = 'Courier'; 
+                    input.style.textAlign = 'center'; 
+                    input.style.letterSpacing = '0px'; 
+                    
+                    input.style.backgroundImage = `linear-gradient(to right, rgba(0, 113, 227, 0.4) 1px, transparent 1px)`; 
+                    input.style.backgroundSize = `calc(100% / ${field.max_len}) 100%`;
+                    
+                    const cellWidthPx = boxWidthPx / field.max_len; 
+                    if (finalSize > cellWidthPx * 0.8) finalSize = cellWidthPx * 0.8; 
+                }
+                input.style.fontSize = Math.max(8, finalSize) + 'px'; 
+                input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); }); 
+                div.appendChild(input);
+            }
+            pageDiv.appendChild(div);
         } else {
             div.style.border = '1px solid #ccc'; div.style.background = 'rgba(255,255,255,0.8)';
             const input = document.createElement('input'); input.type = 'text'; input.value = field.value || ''; input.maxLength = field.max_len > 0 ? field.max_len : 524288;
@@ -182,7 +287,24 @@ document.getElementById('closePopover')?.addEventListener('click', clearSelectio
 document.addEventListener('mousedown', (e) => { if (floatingToolbar.style.display === 'flex' && !e.target.closest('.field-rect') && !e.target.closest('.floating-popover')) clearSelection(); });
 
 function markAsEdited(field) { field.is_edited = true; const el = document.querySelector(`[data-field-name="${CSS.escape(field.name)}"]`); if (el) el.classList.add('edited-field'); }
-document.getElementById('propCells')?.addEventListener('input', (e) => { const f = currentFields.find(f => f.name === selectedFieldName); if (f) { f.max_len = parseInt(e.target.value) || 0; const el = document.querySelector(`[data-field-name="${CSS.escape(f.name)}"]`); if (el) el.classList.toggle('comb', f.max_len > 0); markAsEdited(f); } });
+document.getElementById('propCells')?.addEventListener('input', (e) => {
+    const f = currentFields.find(f => f.name === selectedFieldName);
+    if (f) {
+        f.max_len = parseInt(e.target.value) || 0;
+        const el = document.querySelector(`[data-field-name="${CSS.escape(f.name)}"]`);
+        if (el) {
+            if (f.max_len > 0) {
+                el.classList.add('comb');
+                el.style.backgroundImage = `linear-gradient(to right, rgba(0, 113, 227, 0.6) 1px, transparent 1px)`;
+                el.style.backgroundSize = `calc(100% / ${f.max_len}) 100%`;
+            } else {
+                el.classList.remove('comb');
+                el.style.backgroundImage = 'none';
+            }
+        }
+        markAsEdited(f);
+    }
+});
 document.getElementById('propFontSize')?.addEventListener('input', (e) => { const f = currentFields.find(f => f.name === selectedFieldName); if (f) { f.font_size = parseInt(e.target.value) || 10; markAsEdited(f); } });
 document.getElementById('propAlign')?.addEventListener('change', (e) => { const f = currentFields.find(f => f.name === selectedFieldName); if (f) { f.align = e.target.value; markAsEdited(f); } });
 document.getElementById('propType')?.addEventListener('change', (e) => { const f = currentFields.find(f => f.name === selectedFieldName); if (f) { f.type_input = e.target.value; markAsEdited(f); } });
@@ -201,3 +323,7 @@ function makeDraggable(el, field) { el.addEventListener('mousedown', (e) => { if
 document.addEventListener('mousemove', (e) => { if (!dragEl) return; dragEl.style.left = (startL + e.clientX - startX) + 'px'; dragEl.style.top = (startT + e.clientY - startY) + 'px'; if (floatingToolbar.style.display === 'flex') { const rect = dragEl.getBoundingClientRect(); let topPos = rect.top; if (topPos < 150) topPos = rect.bottom + 10; else topPos = topPos - 100; floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px'; floatingToolbar.style.top = topPos + 'px'; } });
 document.addEventListener('mouseup', () => { if (!dragEl) return; const newX = parseFloat(dragEl.style.left) / currentScale; const newY = parseFloat(dragEl.style.top) / currentScale; const w = dragField.rect[2] - dragField.rect[0], h = dragField.rect[3] - dragField.rect[1]; dragField.rect = [newX, newY, newX + w, newY + h]; markAsEdited(dragField); dragEl = null; dragField = null; });
 window.addEventListener('resize', () => { if (pdfDoc && editorView.style.display !== 'none') { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(() => { renderPdf(); }, 300); } });
+
+
+
+
