@@ -1,66 +1,46 @@
 try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
+let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 
-// ==========================================
 // LÓGICA PARA ARRASTRAR EL POPOVER (DRAG & DROP)
-// ==========================================
-let isDraggingPopover = false;
-let popoverStartX, popoverStartY, popoverStartLeft, popoverStartTop;
-
+let isDraggingPopover = false, popoverStartX, popoverStartY, popoverStartLeft, popoverStartTop;
 document.addEventListener('DOMContentLoaded', () => {
     const popover = document.getElementById('floatingToolbar');
     const header = popover.querySelector('.popover-header');
-
     if (header) {
-        // Mouse events
         header.addEventListener('mousedown', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return; 
             isDraggingPopover = true;
             const rect = popover.getBoundingClientRect();
-            popoverStartX = e.clientX;
-            popoverStartY = e.clientY;
-            popoverStartLeft = rect.left;
-            popoverStartTop = rect.top;
-            popover.style.transform = 'none'; // Desactivar el centrado automático
+            popoverStartX = e.clientX; popoverStartY = e.clientY;
+            popoverStartLeft = rect.left; popoverStartTop = rect.top;
+            popover.style.transform = 'none'; 
         });
-
-        // Touch events
         header.addEventListener('touchstart', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
             isDraggingPopover = true;
             const rect = popover.getBoundingClientRect();
-            popoverStartX = e.touches[0].clientX;
-            popoverStartY = e.touches[0].clientY;
-            popoverStartLeft = rect.left;
-            popoverStartTop = rect.top;
+            popoverStartX = e.touches[0].clientX; popoverStartY = e.touches[0].clientY;
+            popoverStartLeft = rect.left; popoverStartTop = rect.top;
             popover.style.transform = 'none';
         }, {passive: true});
     }
 });
-
 document.addEventListener('mousemove', (e) => {
     if (!isDraggingPopover) return;
     const popover = document.getElementById('floatingToolbar');
-    const dx = e.clientX - popoverStartX;
-    const dy = e.clientY - popoverStartY;
-    popover.style.left = (popoverStartLeft + dx) + 'px';
-    popover.style.top = (popoverStartTop + dy) + 'px';
+    popover.style.left = (popoverStartLeft + e.clientX - popoverStartX) + 'px';
+    popover.style.top = (popoverStartTop + e.clientY - popoverStartY) + 'px';
 });
-
 document.addEventListener('touchmove', (e) => {
     if (!isDraggingPopover) return;
     const popover = document.getElementById('floatingToolbar');
-    const dx = e.touches[0].clientX - popoverStartX;
-    const dy = e.touches[0].clientY - popoverStartY;
-    popover.style.left = (popoverStartLeft + dx) + 'px';
-    popover.style.top = (popoverStartTop + dy) + 'px';
+    popover.style.left = (popoverStartLeft + e.touches[0].clientX - popoverStartX) + 'px';
+    popover.style.top = (popoverStartTop + e.touches[0].clientY - popoverStartY) + 'px';
 }, {passive: true});
-
 document.addEventListener('mouseup', () => { isDraggingPopover = false; });
 document.addEventListener('touchend', () => { isDraggingPopover = false; });
-
-let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 
 // HEADER Y TEMA
 function updateStepper(step) { for (let i=1; i<=4; i++){ const el = document.getElementById(`step-${i}`); if(!el) continue; if (i<=step){ el.classList.add('active'); el.querySelector('span').style.background = '#0071e3'; } else { el.classList.remove('active'); el.querySelector('span').style.background = '#d2d2d7'; } } showHeaderTemporarily(); }
@@ -96,41 +76,21 @@ async function renderPdf() {
     if (!pdfDoc) return; 
     const pdfContainer = document.querySelector('.pdf-container');
     const scrollTop = pdfContainer.scrollTop; 
-    
     pdfPages.innerHTML = '';
     const firstPage = await pdfDoc.getPage(1); const margin = window.innerWidth <= 768 ? 20 : 40; const containerWidth = pdfContainer.clientWidth - margin;
     const baseScale = Math.max(0.5, Math.min(2, containerWidth / firstPage.getViewport({ scale: 1 }).width)); currentScale = isZoomed ? baseScale * 2 : baseScale; if (isZoomed) pdfContainer.classList.add('zoomed'); else pdfContainer.classList.remove('zoomed');
-    
-    // Obtener la densidad de píxeles de la pantalla (Retina / HD)
     const outputScale = window.devicePixelRatio || 1;
 
     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-        const page = await pdfDoc.getPage(pageNum); 
-        const viewport = page.getViewport({ scale: currentScale }); 
-        const pageDiv = document.createElement('div');
-        pageDiv.className = 'pdf-page'; 
-        pageDiv.dataset.pageNum = pageNum - 1; 
-        pageDiv.style.width = viewport.width + 'px'; 
-        pageDiv.style.height = viewport.height + 'px';
-        
-        const canvas = document.createElement('canvas'); 
-        const context = canvas.getContext('2d');
-        
-        // MAGIA: Multiplicar el tamaño del canvas por la densidad de pantalla
-        canvas.width = Math.floor(viewport.width * outputScale);
-        canvas.height = Math.floor(viewport.height * outputScale);
-        canvas.style.width = Math.floor(viewport.width) + "px";
-        canvas.style.height = Math.floor(viewport.height) + "px";
-        
-        pageDiv.appendChild(canvas); 
-        pdfPages.appendChild(pageDiv);
-        
+        const page = await pdfDoc.getPage(pageNum); const viewport = page.getViewport({ scale: currentScale }); const pageDiv = document.createElement('div');
+        pageDiv.className = 'pdf-page'; pageDiv.dataset.pageNum = pageNum - 1; pageDiv.style.width = viewport.width + 'px'; pageDiv.style.height = viewport.height + 'px';
+        const canvas = document.createElement('canvas'); const context = canvas.getContext('2d');
+        canvas.width = Math.floor(viewport.width * outputScale); canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.style.width = Math.floor(viewport.width) + "px"; canvas.style.height = Math.floor(viewport.height) + "px";
+        pageDiv.appendChild(canvas); pdfPages.appendChild(pageDiv);
         const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
         await page.render({ canvasContext: context, transform: transform, viewport }).promise;
-        
-        const pageFields = currentFields.filter(f => f.page === pageNum - 1); 
-        pageFields.forEach(field => createFieldElement(field, pageDiv)); 
-        setupDrawingEvents(pageDiv, pageNum - 1);
+        const pageFields = currentFields.filter(f => f.page === pageNum - 1); pageFields.forEach(field => createFieldElement(field, pageDiv)); setupDrawingEvents(pageDiv, pageNum - 1);
     }
     pdfContainer.scrollTop = scrollTop; 
 }
@@ -138,44 +98,24 @@ document.getElementById('zoomBtn')?.addEventListener('click', () => { isZoomed =
 
 // CAMPOS Y MODO LLENADO (CON AUTO-AJUSTE DE TEXTO)
 function createFieldElement(field, pageDiv) {
-    const div = document.createElement('div'); 
-    div.className = 'field-rect'; 
-    if (field.max_len > 0) div.classList.add('comb');
-    if (field.is_edited) div.classList.add('edited-field');
-
-    // Calcular dimensiones reales de la caja en píxeles
-    const boxWidthPx = (field.rect[2] - field.rect[0]) * currentScale;
-    const boxHeightPx = (field.rect[3] - field.rect[1]) * currentScale;
-
-    div.style.left = (field.rect[0] * currentScale) + 'px'; div.style.top = (field.rect[1] * currentScale) + 'px'; 
-    div.style.width = boxWidthPx + 'px'; div.style.height = boxHeightPx + 'px'; 
-    div.dataset.fieldName = field.name;
+    const div = document.createElement('div'); div.className = 'field-rect'; if (field.max_len > 0) div.classList.add('comb'); if (field.is_edited) div.classList.add('edited-field');
+    const boxWidthPx = (field.rect[2] - field.rect[0]) * currentScale; const boxHeightPx = (field.rect[3] - field.rect[1]) * currentScale;
+    div.style.left = (field.rect[0] * currentScale) + 'px'; div.style.top = (field.rect[1] * currentScale) + 'px'; div.style.width = boxWidthPx + 'px'; div.style.height = boxHeightPx + 'px'; div.dataset.fieldName = field.name;
 
     if (isFillMode) {
         if (field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'))) {
             div.style.border = 'none'; div.style.background = 'transparent';
             const input = document.createElement('input'); input.type = 'checkbox'; input.style.width = '100%'; input.style.height = '100%'; input.style.cursor = 'pointer'; input.checked = field.checked || false;
-            input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); });
-            div.appendChild(input);
+            input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); }); div.appendChild(input);
         } else {
             div.style.border = '1px solid #ccc'; div.style.background = 'rgba(255,255,255,0.8)';
             const input = document.createElement('input'); input.type = 'text'; input.value = field.value || ''; input.maxLength = field.max_len > 0 ? field.max_len : 524288;
             input.style.width = '100%'; input.style.height = '100%'; input.style.border = 'none'; input.style.background = 'transparent'; input.style.padding = '0 2px';
-            
-            // --- AUTO-AJUSTE DE TAMAÑO DE FUENTE ---
             let finalSize = (field.font_size || 10) * currentScale;
-            // Si la caja es muy pequeña, reducir la letra
             if (finalSize > boxHeightPx * 0.75) finalSize = boxHeightPx * 0.75;
-            // Si tiene celdas (peine), ajustar al ancho de la celda
-            if (field.max_len > 0) { 
-                input.style.fontFamily = 'Courier'; input.style.textAlign = 'center'; input.style.letterSpacing = '1px'; 
-                const cellWidthPx = boxWidthPx / field.max_len;
-                if (finalSize > cellWidthPx * 0.8) finalSize = cellWidthPx * 0.8;
-            }
+            if (field.max_len > 0) { input.style.fontFamily = 'Courier'; input.style.textAlign = 'center'; input.style.letterSpacing = '1px'; const cellWidthPx = boxWidthPx / field.max_len; if (finalSize > cellWidthPx * 0.8) finalSize = cellWidthPx * 0.8; }
             input.style.fontSize = Math.max(8, finalSize) + 'px'; 
-            
-            input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); });
-            div.appendChild(input);
+            input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); }); div.appendChild(input);
         }
         pageDiv.appendChild(div);
     } else {
@@ -197,9 +137,7 @@ async function performSave() {
     const updates = currentFields.map(f => ({ name: f.name, rect: f.rect, page: f.page, max_len: f.max_len || 0, font_size: f.font_size || 10, align: f.align || 'left', type_input: f.type_input || 'text', value: f.value || '', checked: f.checked || false }));
     try {
         const res = await fetch(API_URL + '/api/session/' + currentSession + '/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ updates }) });
-        if (!res.ok) throw new Error(); 
-        currentFields.forEach(f => f.is_edited = false);
-        document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('edited-field'));
+        if (!res.ok) throw new Error(); currentFields.forEach(f => f.is_edited = false); document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('edited-field'));
         const dlBtn = document.getElementById('downloadBtn'); if (dlBtn) { dlBtn.href = API_URL + '/api/session/' + currentSession + '/download'; dlBtn.style.display = 'block'; } updateStepper(4); return true;
     } catch (e) { alert('❌ Error al guardar'); return false; }
 }
@@ -219,15 +157,22 @@ document.getElementById('hamburgerBtn')?.addEventListener('click', (e) => { e.st
 document.addEventListener('click', (e) => { const dropdown = document.getElementById('hamburgerDropdown'); if (dropdown && dropdown.style.display === 'flex' && !e.target.closest('#hamburgerMenu')) dropdown.style.display = 'none'; });
 document.getElementById('resetBtn')?.addEventListener('click', () => { if (confirm('¿Reiniciar? Perderás los cambios.')) window.location.reload(); });
 
-
+function selectField(fieldName) {
+    selectedFieldName = fieldName; const field = currentFields.find(f => f.name === fieldName); if (!field) return;
+    document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('selected')); const el = document.querySelector(`[data-field-name="${CSS.escape(fieldName)}"]`); if (el) el.classList.add('selected');
+    document.getElementById('popoverTitle').textContent = field.name.substring(0, 20);
+    document.getElementById('propType').value = field.type_input || 'text'; document.getElementById('propCells').value = field.max_len || 0; document.getElementById('propFontSize').value = field.font_size || 10; document.getElementById('propAlign').value = field.align || 'left';
+    const isCheckbox = field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'));
+    document.querySelectorAll('.text-only-option').forEach(opt => { opt.style.display = isCheckbox ? 'none' : 'flex'; });
+    floatingToolbar.style.display = 'flex'; if (document.getElementById('zoomBtn')) document.getElementById('zoomBtn').style.display = 'none'; if (document.getElementById('addFieldBtn')) document.getElementById('addFieldBtn').style.display = 'none';
+    if (headerElement) { headerElement.classList.add('header-hidden'); document.body.classList.add('header-hidden'); clearTimeout(headerTimeout); }
+    
     if (el) { 
         const rect = el.getBoundingClientRect(); 
         let topPos = rect.top; 
-        // Si la caja está muy arriba, ponemos el popover abajo de la caja para que no se salga
         if (topPos < 150) topPos = rect.bottom + 10; 
-        else topPos = topPos - 100; // Un poco arriba de la caja
-
-        floatingToolbar.style.transform = 'translate(-50%, 0)'; // Volver a centrarlo
+        else topPos = topPos - 100; 
+        floatingToolbar.style.transform = 'translate(-50%, 0)'; 
         floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px';
         floatingToolbar.style.top = topPos + 'px';
     }
@@ -253,6 +198,6 @@ function setupDrawingEvents(pageDiv, pageIndex) {
 }
 let dragEl, dragField, startX, startY, startL, startT;
 function makeDraggable(el, field) { el.addEventListener('mousedown', (e) => { if (isDrawingMode) return; e.preventDefault(); e.stopPropagation(); dragEl = el; dragField = field; startX = e.clientX; startY = e.clientY; startL = parseFloat(el.style.left); startT = parseFloat(el.style.top); }); }
-document.addEventListener('mousemove', (e) => { if (!dragEl) return; dragEl.style.left = (startL + e.clientX - startX) + 'px'; dragEl.style.top = (startT + e.clientY - startY) + 'px'; if (floatingToolbar.style.display === 'flex') { const rect = dragEl.getBoundingClientRect(); let topPos = rect.top; if (topPos < 200) topPos = 200; floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px'; floatingToolbar.style.top = topPos + 'px'; } });
+document.addEventListener('mousemove', (e) => { if (!dragEl) return; dragEl.style.left = (startL + e.clientX - startX) + 'px'; dragEl.style.top = (startT + e.clientY - startY) + 'px'; if (floatingToolbar.style.display === 'flex') { const rect = dragEl.getBoundingClientRect(); let topPos = rect.top; if (topPos < 150) topPos = rect.bottom + 10; else topPos = topPos - 100; floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px'; floatingToolbar.style.top = topPos + 'px'; } });
 document.addEventListener('mouseup', () => { if (!dragEl) return; const newX = parseFloat(dragEl.style.left) / currentScale; const newY = parseFloat(dragEl.style.top) / currentScale; const w = dragField.rect[2] - dragField.rect[0], h = dragField.rect[3] - dragField.rect[1]; dragField.rect = [newX, newY, newX + w, newY + h]; markAsEdited(dragField); dragEl = null; dragField = null; });
 window.addEventListener('resize', () => { if (pdfDoc && editorView.style.display !== 'none') { clearTimeout(resizeTimeout); resizeTimeout = setTimeout(() => { renderPdf(); }, 300); } });
