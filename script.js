@@ -1,10 +1,10 @@
-try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
+﻿try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
 
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
 let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 
-// LOGICA PARA ARRASTRAR EL POPOVER (DRAG & DROP)
+// LOGICA PARA ARRASTRAR EL POPOVER
 let isDraggingPopover = false, popoverStartX, popoverStartY, popoverStartLeft, popoverStartTop;
 document.addEventListener('DOMContentLoaded', () => {
     const popover = document.getElementById('floatingToolbar');
@@ -82,10 +82,10 @@ let currentTheme = localStorage.getItem('theme') || 'light';
 function applyTheme(theme) { 
     if (theme === 'dark') { 
         document.body.classList.add('dark-mode'); 
-        if (themeToggle) themeToggle.innerHTML = '☀️'; 
+        if (themeToggle) themeToggle.innerHTML = 'DARK'; 
     } else { 
         document.body.classList.remove('dark-mode'); 
-        if (themeToggle) themeToggle.innerHTML = '🌙'; 
+        if (themeToggle) themeToggle.innerHTML = 'LIGHT'; 
     } 
     localStorage.setItem('theme', theme); 
 }
@@ -119,7 +119,7 @@ async function analizarYProcesar() {
         
         let continuar = true;
         if (dataAnalyze.quality.status === 'low') {
-            continuar = confirm(`Advertencia: El documento parece ser de baja resolucion (${dataAnalyze.quality.dpi} DPI).\n\nEl texto podria verse borroso. Deseas continuar de todos modos?`);
+            continuar = confirm(`Advertencia: El documento parece ser de baja resolucion (${dataAnalyze.quality.dpi} DPI). El texto podria verse borroso. Deseas continuar?`);
         }
         
         if (!continuar) {
@@ -199,7 +199,7 @@ async function renderPdf() {
 document.getElementById('zoomBtn')?.addEventListener('click', () => { 
     isZoomed = !isZoomed; 
     const btn = document.getElementById('zoomBtn'); 
-    btn.innerHTML = isZoomed ? '100%' : '+'; 
+    btn.innerHTML = isZoomed ? '100%' : 'ZOOM'; 
     btn.style.background = isZoomed ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 113, 227, 0.9)'; 
     renderPdf(); 
 });
