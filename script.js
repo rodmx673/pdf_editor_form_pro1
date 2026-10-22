@@ -29,40 +29,55 @@ let selectedFile = null, currentSession = null, currentFields = [], selectedFiel
 
 // LOGICA PARA ARRASTRAR EL POPOVER
 let isDraggingPopover = false, popoverStartX, popoverStartY, popoverStartLeft, popoverStartTop;
+
 document.addEventListener('DOMContentLoaded', () => {
     const popover = document.getElementById('floatingToolbar');
     const header = popover ? popover.querySelector('.popover-header') : null;
+    
     if (header) {
+        const startDrag = (clientX, clientY) => {
+            isDraggingPopover = true;
+            const rect = popover.getBoundingClientRect();
+            popoverStartX = clientX;
+            popoverStartY = clientY;
+            popoverStartLeft = rect.left;
+            popoverStartTop = rect.top;
+            
+            // IMPORTANTE: Quitamos cualquier transformación para que el arrastre sea 1:1
+            popover.style.transform = 'none';
+            popover.style.margin = '0';
+        };
+
         header.addEventListener('mousedown', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return; 
-            isDraggingPopover = true;
-            const rect = popover.getBoundingClientRect();
-            popoverStartX = e.clientX; popoverStartY = e.clientY;
-            popoverStartLeft = rect.left; popoverStartTop = rect.top;
-            popover.style.transform = 'none'; 
+            startDrag(e.clientX, e.clientY);
         });
+
         header.addEventListener('touchstart', (e) => {
             if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
-            isDraggingPopover = true;
-            const rect = popover.getBoundingClientRect();
-            popoverStartX = e.touches[0].clientX; popoverStartY = e.touches[0].clientY;
-            popoverStartLeft = rect.left; popoverStartTop = rect.top;
-            popover.style.transform = 'none';
+            startDrag(e.touches[0].clientX, e.touches[0].clientY);
         }, {passive: true});
     }
 });
+
 document.addEventListener('mousemove', (e) => {
     if (!isDraggingPopover) return;
     const popover = document.getElementById('floatingToolbar');
-    popover.style.left = (popoverStartLeft + e.clientX - popoverStartX) + 'px';
-    popover.style.top = (popoverStartTop + e.clientY - popoverStartY) + 'px';
+    const dx = e.clientX - popoverStartX;
+    const dy = e.clientY - popoverStartY;
+    popover.style.left = (popoverStartLeft + dx) + 'px';
+    popover.style.top = (popoverStartTop + dy) + 'px';
 });
+
 document.addEventListener('touchmove', (e) => {
     if (!isDraggingPopover) return;
     const popover = document.getElementById('floatingToolbar');
-    popover.style.left = (popoverStartLeft + e.touches[0].clientX - popoverStartX) + 'px';
-    popover.style.top = (popoverStartTop + e.touches[0].clientY - popoverStartY) + 'px';
+    const dx = e.touches[0].clientX - popoverStartX;
+    const dy = e.touches[0].clientY - popoverStartY;
+    popover.style.left = (popoverStartLeft + dx) + 'px';
+    popover.style.top = (popoverStartTop + dy) + 'px';
 }, {passive: true});
+
 document.addEventListener('mouseup', () => { isDraggingPopover = false; });
 document.addEventListener('touchend', () => { isDraggingPopover = false; });
 

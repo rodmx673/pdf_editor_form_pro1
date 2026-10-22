@@ -467,3 +467,41 @@ body.dark-mode .inline-edit-btn {
 @keyframes fadeOut {
     to { opacity: 0; transform: translateY(10px); }
 }
+
+/* ==========================================
+   MENÚ FLOTANTE (FLEXIBLE Y RESPONSIVO)
+   ========================================== */
+.floating-popover {
+    position: fixed;
+    display: none;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    padding: 12px;
+    z-index: 10000;
+    width: 95vw; /* Ocupa casi todo el ancho en móvil */
+    max-width: 600px; /* Pero no se estira demasiado en PC */
+}
+
+#fieldProperties {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los inputs bajen de línea */
+    gap: 10px;
+    justify-content: center;
+}
+
+/* Contenedor de botones de acción (Guardar, Cancelar, Borrar) */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
