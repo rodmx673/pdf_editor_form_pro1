@@ -359,6 +359,43 @@ function triggerShake() {
     }
 }
 
+
+function validateBeforeDownload(e) {
+    let missing = 0;
+    currentFields.forEach(f => {
+        const isCheckbox = f.type && (f.type.toLowerCase().includes('check') || f.type.toLowerCase().includes('radio'));
+        if (isCheckbox) {
+            if (!f.checked) missing++;
+        } else {
+            if (!f.value || f.value.trim() === '') missing++;
+        }
+    });
+
+    if (missing > 0) {
+        const proceed = confirm(`⚠️ Hay ${missing} campo(s) sin llenar.\n\nSi descargas ahora, el PDF estará incompleto.\n\n¿Deseas descargarlo de todos modos?`);
+        if (!proceed) {
+            if(e) e.preventDefault();
+            // Iluminar los campos vacíos en rojo
+            document.querySelectorAll('.field-rect').forEach(el => {
+                const f = currentFields.find(x => x.name === el.dataset.fieldName);
+                if (f) {
+                    const isCheckbox = f.type && (f.type.toLowerCase().includes('check') || f.type.toLowerCase().includes('radio'));
+                    if ((isCheckbox && !f.checked) || (!isCheckbox && (!f.value || f.value.trim() === ''))) {
+                        el.style.border = '3px solid red';
+                        el.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
+                        setTimeout(() => {
+                            el.style.border = '';
+                            el.style.backgroundColor = '';
+                        }, 3000);
+                    }
+                }
+            });
+            return false;
+        }
+    }
+    return true;
+}
+
 function triggerAutoSave() {
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
@@ -377,11 +414,21 @@ async function performSave() {
         currentFields.forEach(f => f.is_edited = false); 
         document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('edited-field'));
         const dlBtn = document.getElementById('downloadBtn'); 
-        if (dlBtn) { dlBtn.href = API_URL + '/api/session/' + currentSession + '/download'; dlBtn.style.display = 'block'; } 
+        if (dlBtn) { 
+            dlBtn.href = API_URL + '/api/session/' + currentSession + '/download'; 
+            dlBtn.style.display = 'block'; 
+            dlBtn.onclick = (e) => validateBeforeDownload(e);
+        } 
+        
         const sealedBtn = document.getElementById('downloadSealedBtn');
         if (sealedBtn) {
             sealedBtn.style.display = 'block';
-            sealedBtn.onclick = () => { window.location.href = API_URL + '/api/session/' + currentSession + '/download?sealed=true'; };
+            sealedBtn.onclick = (e) => {
+                e.preventDefault();
+                if (validateBeforeDownload(e) !== false) {
+                    window.location.href = API_URL + '/api/session/' + currentSession + '/download?sealed=true';
+                }
+            };
         }
         updateStepper(4); 
         return true;
