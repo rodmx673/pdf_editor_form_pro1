@@ -330,3 +330,35 @@ body.dark-mode .prop-item input, body.dark-mode .prop-item select {
 @keyframes fadeOut {
     to { opacity: 0; transform: translateY(10px); }
 }
+
+/* ==========================================
+   BOTÓN DE EDICIÓN RÁPIDA (MODO LLENADO)
+   ========================================== */
+.inline-edit-btn {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: #ff6b00;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    transition: transform 0.2s, background 0.2s;
+}
+
+.inline-edit-btn:hover {
+    transform: scale(1.2);
+    background: #e65c00;
+}
+
+body.dark-mode .inline-edit-btn {
+    border-color: #333;
+}

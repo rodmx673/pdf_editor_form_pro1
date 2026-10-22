@@ -1,4 +1,4 @@
-﻿try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
+try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
 
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
@@ -82,10 +82,10 @@ let currentTheme = localStorage.getItem('theme') || 'light';
 function applyTheme(theme) { 
     if (theme === 'dark') { 
         document.body.classList.add('dark-mode'); 
-        if (themeToggle) themeToggle.innerHTML = 'DARK'; 
+        if (themeToggle) themeToggle.innerHTML = '🌙'; 
     } else { 
         document.body.classList.remove('dark-mode'); 
-        if (themeToggle) themeToggle.innerHTML = 'LIGHT'; 
+        if (themeToggle) themeToggle.innerHTML = '☀️'; 
     } 
     localStorage.setItem('theme', theme); 
 }
@@ -101,7 +101,7 @@ if (uploadArea) {
 }
 function selectFile(file) { 
     selectedFile = file; 
-    uploadArea.querySelector('p').textContent = 'Analizando calidad del PDF...'; 
+    uploadArea.querySelector('p').textContent = '⏳ Analizando calidad del PDF...'; 
     uploadArea.classList.add('processing'); 
     const spinner = document.getElementById('appIconSpinner'); 
     if (spinner) spinner.classList.add('processing'); 
@@ -119,19 +119,19 @@ async function analizarYProcesar() {
         
         let continuar = true;
         if (dataAnalyze.quality.status === 'low') {
-            continuar = confirm(`Advertencia: El documento parece ser de baja resolucion (${dataAnalyze.quality.dpi} DPI). El texto podria verse borroso. Deseas continuar?`);
+            continuar = confirm(`⚠️ Advertencia: El documento parece ser de baja resolución (${dataAnalyze.quality.dpi} DPI).\n\nEl texto podría verse borroso. ¿Deseas continuar de todos modos?`);
         }
         
         if (!continuar) {
             uploadArea.classList.remove('processing'); 
-            uploadArea.querySelector('p').textContent = 'Arrastra tu PDF aqui o haz clic para seleccionar'; 
+            uploadArea.querySelector('p').textContent = 'Arrastra tu PDF aquí o haz clic para seleccionar'; 
             const spinner = document.getElementById('appIconSpinner'); 
             if (spinner) spinner.classList.remove('processing'); 
             updateStepper(1); 
             return;
         }
 
-        uploadArea.querySelector('p').textContent = 'Procesando documento con IA...';
+        uploadArea.querySelector('p').textContent = '⏳ Procesando documento con IA...';
         const resProcess = await fetch(API_URL + '/api/process/' + dataAnalyze.session_id, { method: 'POST' });
         if (!resProcess.ok) throw new Error('Error al procesar el PDF');
         const dataProcess = await resProcess.json();
@@ -150,7 +150,7 @@ async function analizarYProcesar() {
     } catch (error) { 
         alert("Error: " + error.message); 
         uploadArea.classList.remove('processing'); 
-        uploadArea.querySelector('p').textContent = 'Error. Intenta de nuevo.'; 
+        uploadArea.querySelector('p').textContent = '❌ Error. Intenta de nuevo.'; 
         const spinner = document.getElementById('appIconSpinner'); 
         if (spinner) spinner.classList.remove('processing'); 
         updateStepper(1); 
@@ -199,7 +199,7 @@ async function renderPdf() {
 document.getElementById('zoomBtn')?.addEventListener('click', () => { 
     isZoomed = !isZoomed; 
     const btn = document.getElementById('zoomBtn'); 
-    btn.innerHTML = isZoomed ? '100%' : 'ZOOM'; 
+    btn.innerHTML = isZoomed ? '🔍 100%' : '🔍 +'; 
     btn.style.background = isZoomed ? 'rgba(40, 167, 69, 0.9)' : 'rgba(0, 113, 227, 0.9)'; 
     renderPdf(); 
 });
@@ -226,6 +226,22 @@ function createFieldElement(field, pageDiv) {
     div.dataset.fieldName = field.name;
 
     if (isFillMode) {
+        const wrapper = document.createElement('div');
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100%';
+        
+        const btnEdit = document.createElement('button');
+        btnEdit.innerHTML = '✏️';
+        btnEdit.className = 'inline-edit-btn';
+        btnEdit.title = 'Editar este campo';
+        btnEdit.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); 
+            selectField(field.name); 
+        });
+        wrapper.appendChild(btnEdit);
+
         if (field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'))) {
             div.style.border = 'none'; 
             div.style.background = 'transparent';
@@ -236,7 +252,7 @@ function createFieldElement(field, pageDiv) {
             input.style.cursor = 'pointer'; 
             input.checked = field.checked || false;
             input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); }); 
-            div.appendChild(input);
+            wrapper.appendChild(input);
         } else if (field.max_len > 0) {
             div.style.border = 'none'; 
             div.style.background = 'transparent';
@@ -271,7 +287,7 @@ function createFieldElement(field, pageDiv) {
                 });
                 container.appendChild(cell);
             }
-            div.appendChild(container);
+            wrapper.appendChild(container);
         } else {
             div.style.border = '1px solid #0071e3'; 
             div.style.background = 'rgba(255,255,255,0.9)';
@@ -289,8 +305,9 @@ function createFieldElement(field, pageDiv) {
             if (finalSize > boxHeightPx * 0.75) finalSize = boxHeightPx * 0.75;
             input.style.fontSize = Math.max(8, finalSize) + 'px'; 
             input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); }); 
-            div.appendChild(input);
+            wrapper.appendChild(input);
         }
+        div.appendChild(wrapper);
         pageDiv.appendChild(div);
     } else {
         div.addEventListener('click', (e) => { e.stopPropagation(); if (!isDrawingMode) selectField(field.name); }); 
@@ -318,25 +335,30 @@ async function performSave() {
         document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('edited-field'));
         const dlBtn = document.getElementById('downloadBtn'); 
         if (dlBtn) { dlBtn.href = API_URL + '/api/session/' + currentSession + '/download'; dlBtn.style.display = 'block'; } 
+        const sealedBtn = document.getElementById('downloadSealedBtn');
+        if (sealedBtn) {
+            sealedBtn.style.display = 'block';
+            sealedBtn.onclick = () => { window.location.href = API_URL + '/api/session/' + currentSession + '/download?sealed=true'; };
+        }
         updateStepper(4); 
         return true;
-    } catch (e) { alert('Error al guardar'); return false; }
+    } catch (e) { alert('❌ Error al guardar'); return false; }
 }
 
 document.getElementById('saveBtn')?.addEventListener('click', async () => { 
     const success = await performSave(); 
-    if (success) alert('Cambios guardados'); 
+    if (success) alert('✅ Cambios guardados'); 
 });
 
 document.getElementById('fillModeBtn')?.addEventListener('click', async () => {
     const hasUnsavedChanges = currentFields.some(f => f.is_edited);
     if (!isFillMode && hasUnsavedChanges) {
-        const confirmSave = confirm("Tienes cambios de diseno sin guardar. Deseas guardarlos antes de llenar el formulario?");
+        const confirmSave = confirm("Tienes cambios de diseño sin guardar. ¿Deseas guardarlos antes de llenar el formulario?");
         if (confirmSave) { const success = await performSave(); if (!success) return; }
     }
     isFillMode = !isFillMode; 
     const btn = document.getElementById('fillModeBtn'); 
-    btn.textContent = isFillMode ? 'Modo Edicion' : 'Modo Llenado'; 
+    btn.textContent = isFillMode ? '✏️ Modo Edición' : '✍️ Modo Llenado'; 
     btn.style.color = isFillMode ? '#28a745' : '#0071e3'; 
     clearSelection(); 
     renderPdf();
@@ -352,7 +374,7 @@ document.addEventListener('click', (e) => {
     if (dropdown && dropdown.style.display === 'flex' && !e.target.closest('#hamburgerMenu')) dropdown.style.display = 'none'; 
 });
 document.getElementById('resetBtn')?.addEventListener('click', () => { 
-    if (confirm('Reiniciar? Perderas los cambios.')) window.location.reload(); 
+    if (confirm('¿Reiniciar? Perderás los cambios.')) window.location.reload(); 
 });
 
 function selectField(fieldName) {
