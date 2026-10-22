@@ -362,3 +362,108 @@ body.dark-mode .prop-item input, body.dark-mode .prop-item select {
 body.dark-mode .inline-edit-btn {
     border-color: #333;
 }
+
+/* ==========================================
+   BOTÓN DE EDICIÓN RÁPIDA (ESTILO PREMIUM E INVISIBLE)
+   ========================================== */
+.inline-edit-btn {
+    position: absolute;
+    top: -8px; 
+    right: -8px;
+    background: #888888; /* Gris por defecto */
+    color: white;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    
+    /* TOTALMENTE INVISIBLE Y SIN CLICS POR DEFECTO */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+/* 1. Mostrar tenue y permitir clics SOLO cuando el usuario pasa el mouse o toca el campo */
+.field-rect:hover .inline-edit-btn,
+.field-rect:focus-within .inline-edit-btn {
+    opacity: 0.4;
+    visibility: visible;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+/* 2. Iluminar totalmente y mostrar vista previa cuando el mouse está sobre el lápiz */
+.field-rect .inline-edit-btn:hover {
+    opacity: 1 !important;
+    background: #ff6b00;
+    border-color: white;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.6);
+}
+
+/* 3. Estilo de Vista Previa para el menú flotante */
+.floating-popover.preview-mode {
+    opacity: 0.6;
+    transform: translate(-50%, -100%) scale(0.95) !important;
+    box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
+    border: 1px dashed #ff6b00;
+    pointer-events: none; /* No bloquea el clic en el lápiz */
+}
+
+/* ==========================================
+   EFECTO SHAKE PARA ERRORES EN EL MENÚ
+   ========================================== */
+@keyframes shakePopover {
+    0% { transform: translate(-50%, 0) translateX(0); }
+    20% { transform: translate(-50%, 0) translateX(-8px); }
+    40% { transform: translate(-50%, 0) translateX(8px); }
+    60% { transform: translate(-50%, 0) translateX(-8px); }
+    80% { transform: translate(-50%, 0) translateX(8px); }
+    100% { transform: translate(-50%, 0) translateX(0); }
+}
+
+.shake-effect {
+    animation: shakePopover 0.4s ease-in-out;
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 15px rgba(220, 53, 69, 0.5) !important;
+}
+
+/* ==========================================
+   NOTIFICACIONES TOAST
+   ========================================== */
+.toast {
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: slideUpFade 0.3s ease forwards;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 90vw;
+}
+.toast.optimal { background: #28a745; }
+.toast.low { background: #ff6b00; }
+.toast.medium, .toast.high { background: #0071e3; }
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.toast.hiding {
+    animation: fadeOut 0.3s ease forwards;
+}
+@keyframes fadeOut {
+    to { opacity: 0; transform: translateY(10px); }
+}

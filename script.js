@@ -2,6 +2,29 @@ try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSr
 const API_URL = '';
 
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
+let hasFieldEdits = false;
+let originalFieldBackup = null;
+
+function showToast(message, type = 'optimal') {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    let icon = 'ℹ️';
+    if (type === 'optimal') icon = '🌟';
+    if (type === 'low') icon = '⚠️';
+    if (type === 'medium' || type === 'high') icon = '🔍';
+    
+    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('hiding');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
 let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 
 // LOGICA PARA ARRASTRAR EL POPOVER
@@ -145,6 +168,15 @@ async function analizarYProcesar() {
         editorView.style.display = 'flex'; 
         document.getElementById('hamburgerMenu').style.display = 'block'; 
         showHeaderTemporarily();
+        
+        // NUEVO: Entrar directo en Modo Llenado
+        isFillMode = true;
+        const fillBtn = document.getElementById('fillModeBtn');
+        if (fillBtn) {
+            fillBtn.textContent = '✏️ Modo Edición';
+            fillBtn.style.color = '#28a745';
+        }
+        
         await renderPdf(); 
         updateStepper(3);
     } catch (error) { 
@@ -316,6 +348,17 @@ function createFieldElement(field, pageDiv) {
     }
 }
 
+
+function triggerShake() {
+    const popover = document.getElementById('floatingToolbar');
+    if (popover) {
+        popover.classList.remove('shake-effect');
+        void popover.offsetWidth; // Reinicia la animación
+        popover.classList.add('shake-effect');
+        setTimeout(() => popover.classList.remove('shake-effect'), 500);
+    }
+}
+
 function triggerAutoSave() {
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
@@ -378,9 +421,18 @@ document.getElementById('resetBtn')?.addEventListener('click', () => {
 });
 
 function selectField(fieldName) {
+    // GUARDIAN: Si hay cambios sin guardar y se intenta tocar otro campo, bloquear
+    if (hasFieldEdits && selectedFieldName !== fieldName) {
+        triggerShake();
+        showToast("⚠️ Termina de editar este campo. Presiona Guardar o Cancelar.", "low");
+        return;
+    }
+
     selectedFieldName = fieldName; 
     const field = currentFields.find(f => f.name === fieldName); 
     if (!field) return;
+    originalFieldBackup = JSON.parse(JSON.stringify(field));
+    hasFieldEdits = false;
     document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('selected')); 
     const el = document.querySelector(`[data-field-name="${CSS.escape(fieldName)}"]`); 
     if (el) el.classList.add('selected');
@@ -392,22 +444,58 @@ function selectField(fieldName) {
     const isCheckbox = field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'));
     document.querySelectorAll('.text-only-option').forEach(opt => { opt.style.display = isCheckbox ? 'none' : 'flex'; });
     floatingToolbar.style.display = 'flex'; 
+    floatingToolbar.classList.add('user-editing');
+    floatingToolbar.classList.remove('preview-mode');
+    floatingToolbar.style.pointerEvents = 'auto'; // <--- Asegura que el drag funcione
     if (document.getElementById('zoomBtn')) document.getElementById('zoomBtn').style.display = 'none'; 
     if (document.getElementById('addFieldBtn')) document.getElementById('addFieldBtn').style.display = 'none';
     if (headerElement) { headerElement.classList.add('header-hidden'); document.body.classList.add('header-hidden'); clearTimeout(headerTimeout); }
     if (el) { 
         const rect = el.getBoundingClientRect(); 
-        let topPos = rect.top; 
-        if (topPos < 150) topPos = rect.bottom + 10; 
-        else topPos = topPos - 100; 
-        floatingToolbar.style.transform = 'translate(-50%, 0)'; 
-        floatingToolbar.style.left = (rect.left + rect.width / 2) + 'px'; 
-        floatingToolbar.style.top = topPos + 'px'; 
+        const popoverHeight = 150; // Altura aproximada del menú flotante
+        const spaceAbove = rect.top;
+        const spaceBelow = window.innerHeight - rect.bottom;
+
+        if (window.innerWidth <= 768) {
+            // MÓVIL: Centrado horizontal, posicionado arriba o abajo según el espacio
+            floatingToolbar.style.left = '50%';
+            
+            if (spaceAbove > popoverHeight + 20) {
+                // Hay espacio arriba: Lo mostramos arriba de la caja
+                floatingToolbar.style.top = rect.top + 'px';
+                floatingToolbar.style.transform = 'translate(-50%, -100%)';
+                floatingToolbar.style.marginTop = '-10px';
+            } else if (spaceBelow > popoverHeight + 20) {
+                // No hay espacio arriba: Lo mostramos abajo de la caja
+                floatingToolbar.style.top = rect.bottom + 'px';
+                floatingToolbar.style.transform = 'translate(-50%, 0)';
+                floatingToolbar.style.marginTop = '10px';
+            } else {
+                // Si la caja es gigante o la pantalla muy pequeña, lo centramos
+                floatingToolbar.style.top = '50%';
+                floatingToolbar.style.transform = 'translate(-50%, -50%)';
+                floatingToolbar.style.marginTop = '0px';
+            }
+        } else {
+            // PC: Posicionar cerca del campo respetando los bordes
+            let topPos = rect.top - 100; 
+            let leftPos = rect.left + rect.width / 2;
+            
+            if (topPos < 20) topPos = rect.bottom + 20; 
+            if (leftPos < 200) leftPos = 200; 
+            if (leftPos > window.innerWidth - 200) leftPos = window.innerWidth - 200;
+            
+            floatingToolbar.style.transform = 'translate(-50%, 0)'; 
+            floatingToolbar.style.left = leftPos + 'px'; 
+            floatingToolbar.style.top = topPos + 'px'; 
+            floatingToolbar.style.marginTop = '0px';
+        }
     }
 }
 
 function clearSelection() { 
     selectedFieldName = null; 
+    hasFieldEdits = false; 
     document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('selected')); 
     floatingToolbar.style.display = 'none'; 
     const helpTip = document.getElementById('helpTooltip'); 
@@ -416,9 +504,25 @@ function clearSelection() {
     if (document.getElementById('addFieldBtn') && document.body.classList.contains('editing-mode')) document.getElementById('addFieldBtn').style.display = 'flex'; 
 }
 
-document.getElementById('closePopover')?.addEventListener('click', clearSelection);
+document.getElementById('closePopover')?.addEventListener('click', (e) => {
+    if (hasFieldEdits) {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerShake();
+        showToast("⚠️ Tienes cambios sin guardar. Presiona Guardar o Cancelar.", "low");
+    } else {
+        clearSelection();
+    }
+});
 document.addEventListener('mousedown', (e) => { 
-    if (floatingToolbar.style.display === 'flex' && !e.target.closest('.field-rect') && !e.target.closest('.floating-popover')) clearSelection(); 
+    if (floatingToolbar.style.display === 'flex' && !e.target.closest('.field-rect') && !e.target.closest('.floating-popover')) {
+        if (hasFieldEdits) {
+            triggerShake();
+            showToast("⚠️ Tienes cambios sin guardar. Presiona Guardar o Cancelar.", "low");
+        } else {
+            clearSelection(); 
+        }
+    } 
 });
 
 function markAsEdited(field) { 
@@ -427,10 +531,25 @@ function markAsEdited(field) {
     if (el) el.classList.add('edited-field'); 
 }
 
-document.getElementById('propCells')?.addEventListener('input', (e) => { 
-    const f = currentFields.find(f => f.name === selectedFieldName); 
-    if (f) { 
-        f.max_len = parseInt(e.target.value) || 0; 
+document.getElementById('propCells')?.addEventListener('input', (e) => {
+    const f = currentFields.find(f => f.name === selectedFieldName);
+    if (f) {
+        const newMaxLen = parseInt(e.target.value) || 0;
+        
+        if (newMaxLen > 0) {
+            const fieldWidth = f.rect[2] - f.rect[0];
+            const fontSize = f.font_size || 10;
+            const minCellWidth = fontSize * 0.65; 
+            
+            if ((fieldWidth / newMaxLen) < minCellWidth) {
+                triggerShake(); // Efecto visual
+                setTimeout(() => alert("⚠️ El espacio es demasiado pequeño para tantas celdas.\n\nPor favor, reduce el tamaño de la fuente para poder agregar más celdas."), 400);
+                e.target.value = f.max_len; // Revertir
+                return;
+            }
+        }
+
+        f.max_len = newMaxLen; 
         const el = document.querySelector(`[data-field-name="${CSS.escape(f.name)}"]`); 
         if (el) { 
             if (f.max_len > 0) { 
@@ -446,17 +565,62 @@ document.getElementById('propCells')?.addEventListener('input', (e) => {
     } 
 });
 
-document.getElementById('propFontSize')?.addEventListener('input', (e) => { 
-    const f = currentFields.find(f => f.name === selectedFieldName); 
-    if (f) { f.font_size = parseInt(e.target.value) || 10; markAsEdited(f); } 
+document.getElementById('propFontSize')?.addEventListener('input', (e) => {
+    const f = currentFields.find(f => f.name === selectedFieldName);
+    if (f) {
+        const newFontSize = parseInt(e.target.value) || 10;
+        
+        if (f.max_len > 0) {
+            const fieldWidth = f.rect[2] - f.rect[0];
+            const minCellWidth = newFontSize * 0.65;
+            
+            if ((fieldWidth / f.max_len) < minCellWidth) {
+                triggerShake(); // Efecto visual
+                setTimeout(() => alert("⚠️ Esta fuente es demasiado grande para la cantidad de celdas actual.\n\nPor favor, reduce el número de celdas o usa una fuente más pequeña."), 400);
+                e.target.value = f.font_size; // Revertir
+                return;
+            }
+        }
+        
+        f.font_size = newFontSize; 
+        markAsEdited(f); 
+    } 
 });
 document.getElementById('propAlign')?.addEventListener('change', (e) => { 
     const f = currentFields.find(f => f.name === selectedFieldName); 
-    if (f) { f.align = e.target.value; markAsEdited(f); } 
+    if (f) { f.align = e.target.value; markAsEdited(f); hasFieldEdits = true; } 
 });
 document.getElementById('propType')?.addEventListener('change', (e) => { 
     const f = currentFields.find(f => f.name === selectedFieldName); 
-    if (f) { f.type_input = e.target.value; markAsEdited(f); } 
+    if (f) { f.type_input = e.target.value; markAsEdited(f); hasFieldEdits = true; } 
+});
+
+
+document.getElementById('saveFieldBtn')?.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const success = await performSave();
+    if (success) {
+        hasFieldEdits = false;
+        clearSelection();
+        renderPdf(); 
+        showToast("✅ Cambios aplicados y guardados", "optimal");
+    }
+});
+
+document.getElementById('cancelFieldBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (originalFieldBackup && selectedFieldName) {
+        const f = currentFields.find(f => f.name === selectedFieldName);
+        if (f) {
+            f.max_len = originalFieldBackup.max_len;
+            f.font_size = originalFieldBackup.font_size;
+            f.align = originalFieldBackup.align;
+            f.type_input = originalFieldBackup.type_input;
+        }
+    }
+    hasFieldEdits = false;
+    clearSelection();
+    renderPdf(); 
 });
 
 document.getElementById('deleteField')?.addEventListener('click', (e) => { 
