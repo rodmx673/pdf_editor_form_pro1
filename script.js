@@ -326,8 +326,8 @@ function createFieldElement(field, pageDiv) {
                 cell.addEventListener('input', (e) => {
                     if (e.target.value.length === 1 && i < field.max_len - 1) container.children[i + 1].focus();
                     let val = '';
-                    for(let j = 0; j < field.max_len; j++) val += container.children[j].value || ' ';
-                    field.value = val.trimEnd(); triggerAutoSave();
+                    for(let j = 0; j < field.max_len; j++) val += container.children[j].value || '';
+                    field.value = val; triggerAutoSave();
                 });
                 cell.addEventListener('keydown', (e) => {
                     if (e.key === 'Backspace' && !e.target.value && i > 0) container.children[i - 1].focus();
@@ -411,6 +411,33 @@ function validateBeforeDownload(e) {
     return true;
 }
 
+
+async function forceDownload(url, filename) {
+    try {
+        showToast("⏳ Preparando descarga...", "medium");
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Error en la respuesta del servidor");
+        
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = blobUrl;
+        a.download = filename; // Esto fuerza la descarga
+        document.body.appendChild(a);
+        a.click();
+        
+        window.URL.revokeObjectURL(blobUrl);
+        document.body.removeChild(a);
+        
+        showToast("✅ Archivo descargado con éxito", "optimal");
+    } catch (error) {
+        console.error("Error de descarga:", error);
+        alert("❌ Error al descargar el archivo. Intenta de nuevo.");
+    }
+}
+
 function triggerAutoSave() {
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
@@ -430,9 +457,14 @@ async function performSave() {
         document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('edited-field'));
         const dlBtn = document.getElementById('downloadBtn'); 
         if (dlBtn) { 
-            dlBtn.href = API_URL + '/api/session/' + currentSession + '/download'; 
+            dlBtn.href = '#'; 
             dlBtn.style.display = 'block'; 
-            dlBtn.onclick = (e) => validateBeforeDownload(e);
+            dlBtn.onclick = (e) => {
+                e.preventDefault();
+                if (validateBeforeDownload(e) !== false) {
+                    forceDownload(API_URL + '/api/session/' + currentSession + '/download', 'formulario_lleno.pdf');
+                }
+            };
         } 
         
         const sealedBtn = document.getElementById('downloadSealedBtn');
@@ -441,7 +473,7 @@ async function performSave() {
             sealedBtn.onclick = (e) => {
                 e.preventDefault();
                 if (validateBeforeDownload(e) !== false) {
-                    window.location.href = API_URL + '/api/session/' + currentSession + '/download?sealed=true';
+                    forceDownload(API_URL + '/api/session/' + currentSession + '/download?sealed=true', 'formulario_sellado.pdf');
                 }
             };
         }
