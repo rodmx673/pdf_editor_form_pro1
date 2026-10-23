@@ -535,3 +535,33 @@ body.dark-mode .inline-edit-btn {
         font-size: 14px !important; /* Texto de "PDF EDIT FORMS APP" más grande */
     }
 }
+
+/* ==========================================
+   AJUSTE DE SEPARACIÓN ENTRE LOGO Y TEXTO (FOOTER)
+   ========================================== */
+.app-branding {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Esta línea separa automáticamente el logo del texto */
+}
+
+.app-icon-container img {
+    margin-bottom: 0 !important; /* Quitamos el margen inferior porque usamos gap */
+}
+
+.app-branding span {
+    margin-top: 0;
+    display: block;
+    text-align: center;
+}
+
+@media (min-width: 769px) {
+    .app-branding {
+        gap: 25px; /* Más espacio en PC para que respire mejor */
+        margin-top: 20px;
+    }
+    .app-icon-container img {
+        margin-top: 0 !important; /* Eliminamos el margin-top extra que causaba el solapamiento */
+    }
+}
