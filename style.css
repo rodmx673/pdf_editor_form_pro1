@@ -505,3 +505,33 @@ body.dark-mode .inline-edit-btn {
     padding-top: 10px;
     border-top: 1px solid #eee;
 }
+
+/* ==========================================
+   TAMAÑO DE LA CAJA DE SUBIDA EN PC (ESCRITORIO)
+   ========================================== */
+@media (min-width: 769px) {
+    .upload-area {
+        max-width: 700px !important; /* Mucho más ancha */
+        padding: 80px 40px !important; /* Mucho más alta */
+        border-radius: 24px !important;
+    }
+    
+    .upload-area .upload-icon {
+        font-size: 60px !important; /* Icono de PDF más grande */
+        margin-bottom: 20px !important;
+    }
+    
+    .upload-area p {
+        font-size: 20px !important; /* Texto más grande y fácil de leer */
+    }
+
+    .app-branding img {
+        width: 120px !important; /* El logo de la app también crece un poco */
+        height: 120px !important;
+        margin-top: 40px !important;
+    }
+    
+    .app-branding span {
+        font-size: 14px !important; /* Texto de "PDF EDIT FORMS APP" más grande */
+    }
+}
