@@ -840,3 +840,35 @@ window.addEventListener('resize', () => {
         resizeTimeout = setTimeout(() => { renderPdf(); }, 300); 
     } 
 });
+
+
+// LÓGICA DEL MODAL DE PRECIOS
+document.addEventListener('DOMContentLoaded', () => {
+    const openBtn = document.getElementById('openPricingBtn');
+    const modal = document.getElementById('pricingModal');
+    const closeBtn = document.getElementById('closePricingBtn');
+
+    if (openBtn && modal) {
+        openBtn.addEventListener('click', () => {
+            modal.style.display = 'flex';
+            // Ocultar el menú hamburguesa al abrir el modal
+            const dropdown = document.getElementById('hamburgerDropdown');
+            if (dropdown) dropdown.style.display = 'none';
+        });
+    }
+
+    if (closeBtn && modal) {
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+
+    // Cerrar al hacer clic fuera del modal
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    }
+});

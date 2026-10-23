@@ -565,3 +565,33 @@ body.dark-mode .inline-edit-btn {
         margin-top: 0 !important; /* Eliminamos el margin-top extra que causaba el solapamiento */
     }
 }
+
+/* ==========================================
+   MODAL DE PRECIOS (MODO OSCURO)
+   ========================================== */
+body.dark-mode #pricingModal > div {
+    background: #1c1c1e !important;
+    border: 1px solid #333;
+}
+body.dark-mode #pricingModal h2, 
+body.dark-mode #pricingModal h3, 
+body.dark-mode #pricingModal div[style*="font-size: 36px"] {
+    color: #f5f5f7 !important;
+}
+body.dark-mode #pricingModal .pricing-card-1 {
+    background: #2c1a0f !important;
+}
+body.dark-mode #pricingModal .pricing-card-2 {
+    background: #1c1c1e !important;
+    border-color: #444 !important;
+}
+body.dark-mode #pricingModal ul {
+    color: #aaa !important;
+}
+body.dark-mode #pricingModal p {
+    color: #888 !important;
+}
+body.dark-mode #closePricingBtn {
+    background: #333 !important;
+    color: white !important;
+}
