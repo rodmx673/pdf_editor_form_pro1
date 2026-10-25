@@ -595,3 +595,246 @@ body.dark-mode #closePricingBtn {
     background: #333 !important;
     color: white !important;
 }
+
+
+/* ==========================================
+   LATIDO DEL PUNTO ACTIVO EN EL STEPPER
+   ========================================== */
+@keyframes pulse-blue {
+    0%   { box-shadow: 0 0 0 0   rgba(0, 113, 227, 0.7); }
+    70%  { box-shadow: 0 0 0 8px rgba(0, 113, 227, 0); }
+    100% { box-shadow: 0 0 0 0   rgba(0, 113, 227, 0); }
+}
+
+.step.active span:first-child {
+    animation: pulse-blue 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .step.active span:first-child {
+        animation: none;
+    }
+}
+/* ==========================================
+   BOTÓN DE EDICIÓN "MÁS" (+) FLOTANTE
+   Encima del campo con línea conectora vertical
+   ========================================== */
+
+/* Wrapper del botón: se posiciona encima del field-rect */
+.field-rect .edit-btn-wrapper {
+    position: absolute;
+    top: -22px;                    /* flota 22px arriba del recuadro */
+    right: -12px;                  /* alineado a la derecha, sobresale un poco */
+    width: 24px;
+    height: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 110;
+    pointer-events: none;          /* invisible por defecto para clics */
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+
+/* Mostrar al hacer hover o focus sobre el campo */
+.field-rect:hover .edit-btn-wrapper,
+.field-rect:focus-within .edit-btn-wrapper {
+    opacity: 0.55;
+    visibility: visible;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+/* Iluminar totalmente cuando el mouse está SOBRE el botón */
+.field-rect .edit-btn-wrapper:hover {
+    opacity: 1 !important;
+}
+
+/* Botón circular con + */
+.field-rect .inline-edit-btn {
+    /* Resetear estilos anteriores */
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1.5px solid #ffffff;
+    background: #ff6b00;
+    color: #ffffff;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+    /* Animación al hover */
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    /* Resetear opacidades viejas */
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.field-rect .inline-edit-btn:hover {
+    background: #e65c00;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.6);
+}
+
+/* Línea vertical conectora entre el botón y el campo */
+.field-rect .inline-edit-btn::after {
+    content: '';
+    position: absolute;
+    top: 100%;                     /* empieza donde termina el botón */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1.5px;
+    height: 12px;                  /* largo de la línea conectora */
+    background: #ff6b00;
+    border-radius: 1px;
+}
+
+/* Modo oscuro */
+body.dark-mode .field-rect .inline-edit-btn {
+    border-color: #1c1c1e;
+    background: #ff6b00;
+    color: #ffffff;
+}
+body.dark-mode .field-rect .inline-edit-btn:hover {
+    background: #ff8533;
+}
+body.dark-mode .field-rect .inline-edit-btn::after {
+    background: #ff6b00;
+}
+
+/* ==========================================
+   MODO "OCULTAR CAMPOS" (transparente)
+   ========================================== */
+
+/* Cuando body tiene la clase 'fields-hidden', todos los field-rect pierden fondo/borde */
+body.fields-hidden .field-rect {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    background-image: none !important;
+}
+
+/* Inputs dentro de los campos: fondo y borde transparentes, pero TEXTO VISIBLE */
+body.fields-hidden .field-rect input,
+body.fields-hidden .field-rect input[type="text"],
+body.fields-hidden .field-rect input[type="number"] {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: #1d1d1f !important;
+    caret-color: #0071e3 !important;
+}
+
+/* Checkboxes: mantener el check visible pero sin fondo azul */
+body.fields-hidden .field-rect input[type="checkbox"] {
+    background: transparent !important;
+    border-color: transparent !important;
+    opacity: 1 !important;
+}
+
+/* El botón + y el preview Aa: ocultos también */
+body.fields-hidden .field-rect .inline-edit-btn,
+body.fields-hidden .field-rect .edit-btn-wrapper,
+body.fields-hidden .field-rect .edit-btn-wrapper span,
+body.fields-hidden .field-rect > div > .edit-btn-wrapper {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Overlay transparente (sin el fondo azul) */
+body.fields-hidden .field-rect::before {
+    display: none !important;
+}
+
+/* Hover: mostrar un borde sutil para que el usuario sepa que puede interactuar */
+body.fields-hidden .field-rect:hover {
+    background-color: rgba(0, 113, 227, 0.08) !important;
+    border-color: rgba(0, 113, 227, 0.4) !important;
+}
+
+/* ==========================================
+   BOTÓN TOGGLE DE CAMPOS (FAB flotante, siempre visible)
+   ========================================== */
+
+.fields-toggle-fab {
+    display: none;
+    position: fixed;
+    top: 65px;
+    right: 15px;
+    z-index: 1010;
+    padding: 8px 14px;
+    border: 1.5px solid #0071e3;
+    background: #ffffff;
+    color: #0071e3;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: top 0.25s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    white-space: nowrap;
+}
+
+.fields-toggle-fab:hover {
+    background: #f0f7ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,113,227,0.2);
+}
+
+.fields-toggle-fab.active {
+    border-color: #28a745;
+    color: #28a745;
+    background: #f0fff4;
+}
+
+.fields-toggle-fab.active:hover {
+    background: #e6ffed;
+}
+
+/* Cuando el menú hamburguesa está abierto, el botón baja */
+body.hamburger-open .fields-toggle-fab {
+    top: 385px;
+}
+
+/* Mostrar solo en modo editor */
+body.editing-mode .fields-toggle-fab {
+    display: block;
+}
+
+/* Modo oscuro */
+body.dark-mode .fields-toggle-fab {
+    background: #2c2c2e;
+    color: #ffffff;
+    border-color: #0071e3;
+}
+body.dark-mode .fields-toggle-fab:hover {
+    background: #3a3a3c;
+}
+body.dark-mode .fields-toggle-fab.active {
+    border-color: #28a745;
+    color: #28a745;
+    background: #1a2e1f;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .fields-toggle-fab {
+        top: 60px;
+        right: 12px;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+    body.hamburger-open .fields-toggle-fab {
+        top: 360px;
+    }
+}
