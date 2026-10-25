@@ -55,11 +55,11 @@ body.header-hidden .pdf-container { padding-top: 15px; }
 .prop-item input, .prop-item select { padding: 5px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px; width: 100%; }
 
 /* BOTONES FLOTANTES (FAB) */
-.zoom-fab, .fab-pencil { position: fixed; right: 20px; width: 50px; height: 50px; border-radius: 50%; color: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 900; font-size: 20px; cursor: pointer; display: none; align-items: center; justify-content: center; transition: transform 0.2s; }
-body.editing-mode .zoom-fab, body.editing-mode .fab-pencil { display: flex; }
+/* .zoom-fab, .fab-pencil { position: fixed; right: 20px; width: 50px; height: 50px; border-radius: 50%; color: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 900; font-size: 20px; cursor: pointer; display: none; align-items: center; justify-content: center; transition: transform 0.2s; } */
+/* body.editing-mode .zoom-fab, body.editing-mode .fab-pencil { display: flex; } */
 .zoom-fab { bottom: 80px; background: rgba(0, 113, 227, 0.9); }
-.fab-pencil { bottom: 140px; background: #ff6b00; }
-.fab-pencil.active { background: #28a745; box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); }
+/* .fab-pencil { bottom: 140px; background: #ff6b00; } */
+/* .fab-pencil.active { background: #28a745; box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); } */
 
 /* BOTONES COMUNES */
 .btn-tool { padding: 8px 15px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 500; font-size: 13px; white-space: nowrap; color: #333; display: inline-block; text-align: center; text-decoration: none;}
@@ -918,5 +918,363 @@ body.dark-mode .fields-toggle-fab.active {
 @media (min-width: 769px) {
     .app-icon-container {
         margin-top: 70px !important;
+    }
+}
+
+/* ==========================================
+   HEADER REORGANIZADO
+   ========================================== */
+
+/* Checkbox "Anclar header" */
+.header-pin-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0f0f5;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.header-pin-label:hover {
+    background: #e0e0e5;
+}
+
+.header-pin-label input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+    accent-color: #0071e3;
+    width: 14px;
+    height: 14px;
+}
+
+body.dark-mode .header-pin-label {
+    background: #2c2c2e;
+    color: #fff;
+}
+
+body.dark-mode .header-pin-label:hover {
+    background: #3a3a3c;
+}
+
+/* Barra de acciones horizontal */
+.header-actions {
+    display: none;
+    margin-top: 16px;
+    padding: 0 20px;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #d2d2d7 transparent;
+    justify-content: center;
+    align-items: center;
+}
+
+.header-actions::-webkit-scrollbar {
+    height: 6px;
+}
+
+.header-actions::-webkit-scrollbar-thumb {
+    background: #d2d2d7;
+    border-radius: 3px;
+}
+
+body.editing-mode .header-actions {
+    display: flex;
+}
+
+/* Botones */
+.header-action-btn {
+    flex-shrink: 0;
+    padding: 10px 18px;
+    border-radius: 24px;
+    border: 1.5px solid #ddd;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.header-action-btn:hover {
+    background: #f0f7ff;
+    border-color: #0071e3;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0,113,227,0.15);
+}
+
+.header-action-primary {
+    background: #0071e3;
+    color: #fff;
+    border-color: #0071e3;
+    box-shadow: 0 2px 8px rgba(0,113,227,0.3);
+}
+
+.header-action-primary:hover {
+    background: #005bb5;
+    border-color: #005bb5;
+}
+
+.header-action-success {
+    background: #28a745;
+    color: #fff;
+    border-color: #28a745;
+    box-shadow: 0 2px 8px rgba(40,167,69,0.3);
+}
+
+.header-action-success:hover {
+    background: #218838;
+    border-color: #218838;
+}
+
+.header-action-sealed {
+    background: #ff6b00;
+    color: #fff;
+    border-color: #ff6b00;
+    box-shadow: 0 2px 8px rgba(255,107,0,0.3);
+}
+
+.header-action-sealed:hover {
+    background: #e65c00;
+    border-color: #e65c00;
+}
+
+.header-action-pricing {
+    color: #ff6b00;
+    border-color: #ff6b00;
+}
+
+.header-action-pricing:hover {
+    background: #fff3eb;
+}
+
+/* Badge en Guardar */
+.unsaved-badge {
+    display: none;
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 11px;
+    height: 11px;
+    background: #ff3b30;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px #fff;
+    animation: pulse-badge 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+}
+
+body.dark-mode .header-action-btn {
+    background: #2c2c2e;
+    color: #fff;
+    border-color: #444;
+}
+
+body.dark-mode .header-action-btn:hover {
+    background: #3a3a3c;
+}
+
+body.dark-mode .header-action-primary {
+    background: #0071e3;
+    color: #fff;
+}
+
+body.dark-mode .header-action-success {
+    background: #28a745;
+    color: #fff;
+}
+
+body.dark-mode .header-action-sealed {
+    background: #ff6b00;
+    color: #fff;
+}
+
+body.dark-mode .header-action-pricing {
+    color: #ff9a4d;
+    border-color: #ff9a4d;
+}
+
+/* RESPONSIVE */
+@media (min-width: 769px) {
+    .header-actions {
+        gap: 14px;
+        padding: 0 30px;
+    }
+
+    .header-action-btn {
+        padding: 11px 20px;
+        font-size: 14px;
+        border-radius: 26px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-actions {
+        justify-content: flex-start;
+        padding: 0 15px;
+        margin-top: 12px;
+        gap: 8px;
+    }
+
+    .header-action-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+        border-radius: 20px;
+    }
+
+    .header-pin-label {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+}
+
+/* Header anclado */
+body.header-pinned header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    z-index: 100 !important;
+    transform: translateY(0) !important;
+    text-align: center !important;
+}
+
+body.header-pinned .pdf-container {
+    padding-top: 220px !important;
+}
+
+@media (max-width: 768px) {
+    body.header-pinned .pdf-container {
+        padding-top: 260px !important;
+    }
+}
+
+/* ==========================================
+   PESTAÑA FLOTANTE PARA MOSTRAR HEADER
+   Aparece solo cuando el header está oculto
+   ========================================== */
+
+.header-peek-tab {
+    display: none;              /* Oculta por defecto */
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+    background: linear-gradient(135deg, #0071e3, #005bb5);
+    color: #fff;
+    border: none;
+    border-radius: 0 0 12px 12px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 999;
+    box-shadow: 0 4px 12px rgba(0, 113, 227, 0.4);
+    transition: transform 0.3s ease, opacity 0.3s ease, background 0.2s;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+    opacity: 0;
+}
+
+/* Cuando el body tiene la clase header-hidden, la pestaña aparece */
+body.header-hidden .header-peek-tab,
+body.header-unpinned .header-peek-tab {
+    display: flex;
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.header-peek-tab:hover {
+    background: linear-gradient(135deg, #005bb5, #004494);
+    transform: translateX(-50%) translateY(2px);
+}
+
+.header-peek-tab:active {
+    transform: translateX(-50%) translateY(4px);
+}
+
+/* Icono animado (rebote) */
+.header-peek-tab .peek-icon {
+    display: inline-block;
+    animation: peek-bounce 2s ease-in-out infinite;
+}
+
+@keyframes peek-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(3px); }
+}
+
+/* Modo oscuro */
+body.dark-mode .header-peek-tab {
+    background: linear-gradient(135deg, #0071e3, #005bb5);
+    box-shadow: 0 4px 12px rgba(0, 113, 227, 0.6);
+}
+
+/* Responsive móvil */
+@media (max-width: 768px) {
+    .header-peek-tab {
+        padding: 7px 16px;
+        font-size: 12px;
+        border-radius: 0 0 10px 10px;
+    }
+    
+    .header-peek-tab .peek-label {
+        font-size: 11px;
+    }
+}
+
+/* ── Ocultar el checkbox "Anclar" fuera del editor ── */
+body:not(.editing-mode) .header-pin-label {
+    display: none !important;
+}
+
+/* ==========================================
+   HEADER DESANCLADO — se oculta al desmarcar el checkbox
+   ========================================== */
+
+/* Ocultar el header al desanclar */
+body.header-unpinned header {
+    transform: translateY(-100%) !important;
+    transition: transform 0.4s ease !important;
+}
+
+/* Cuando desanclado, el PDF sube (no hay header que ocupar espacio) */
+body.header-unpinned .pdf-container {
+    padding-top: 15px !important;
+    transition: padding-top 0.4s ease !important;
+}
+
+/* Cuando anclado, el PDF baja (hay header que ocupa espacio) */
+body.header-pinned .pdf-container {
+    padding-top: 220px !important;
+    transition: padding-top 0.4s ease !important;
+}
+
+@media (max-width: 768px) {
+    body.header-pinned .pdf-container {
+        padding-top: 260px !important;
+    }
+    body.header-unpinned .pdf-container {
+        padding-top: 15px !important;
     }
 }

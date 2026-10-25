@@ -10,8 +10,18 @@
 </head>
 <body>
 
+<!-- Pestaña flotante para mostrar el header cuando está oculto -->
+<button id="headerPeekTab" class="header-peek-tab" title="Mostrar el header">
+    <span class="peek-icon">⬇</span>
+    <span class="peek-label">Mostrar Header</span>
+</button>
+
 <header id="mainHeader">
     <div class="header-toggles">
+        <label class="header-pin-label" title="Anclar el header (no se oculta al hacer scroll)">
+            <input type="checkbox" id="pinHeaderCheckbox" checked>
+            <span>📌 Anclar</span>
+        </label>
         <button id="langToggle" class="toggle-btn">🇲🇽 ES</button>
         <button id="themeToggle" class="toggle-btn">🌙</button>
     </div>
@@ -25,6 +35,18 @@
         <div class="step" id="step-3"><span>3</span> <span>Editar</span></div>
         <div class="step-line"></div>
         <div class="step" id="step-4"><span>4</span> <span>Descargar</span></div>
+    </div>
+
+    <!-- Barra de acciones horizontal -->
+    <div id="headerActions" class="header-actions">
+        <button id="fillModeBtn" class="header-action-btn" title="Cambia entre modo Edición y Llenado">✍️ Modo Llenado</button>
+        <button id="saveBtn" class="header-action-btn header-action-primary" title="Guarda todos los cambios. Sin esto, tus ediciones no aparecerán en el PDF descargado.">💾 Guardar<span id="unsavedBadge" class="unsaved-badge"></span></button>
+        <a id="downloadBtn" class="header-action-btn header-action-success" style="display: none;" title="Descarga el PDF con tus cambios.">⬇ Descargar Editable</a>
+        <button id="downloadSealedBtn" class="header-action-btn header-action-sealed" style="display: none;" title="Descarga el PDF como imagen (no editable)">🔒 Descargar Sellado</button>
+        <button id="tourBtnMenu" class="header-action-btn" title="Ver tutorial interactivo">🎓 Tutorial</button>
+        <button id="resetBtn" class="header-action-btn" title="Reinicia el proceso">↺ Reiniciar</button>
+        <button id="toggleHeaderBtn" class="header-action-btn" title="Mostrar/ocultar el header">👁 Header</button>
+        <button id="openPricingBtn" class="header-action-btn header-action-pricing" title="Ver planes y precios">💳 Planes</button>
     </div>
     
 
@@ -44,18 +66,6 @@
     </div>
     
     <div id="editorView" class="view" style="display: none;">
-        <div id="hamburgerMenu">
-            <button id="hamburgerBtn">☰</button>
-            <div id="hamburgerDropdown">
-                <button id="fillModeBtn" class="btn-tool" style="width: 100%; text-align: left; font-weight: bold; color: #0071e3;" title="Cambia entre modo Edición (ajustar campos) y modo Llenado (escribir en el formulario)">✍️ Modo Llenado</button>
-                <button id="saveBtn" class="btn-tool btn-primary" style="width: 100%; text-align: left; position: relative;" title="Guarda todos los cambios. Sin esto, tus ediciones no aparecerán en el PDF descargado.">💾 Guardar<span id="unsavedBadge" style="display: none; position: absolute; top: 4px; right: 8px; width: 10px; height: 10px; background: #ff3b30; border-radius: 50%; box-shadow: 0 0 0 2px white;"></span></button>
-                <a id="downloadBtn" class="btn-tool btn-success" title="Descarga el PDF con tus cambios. Requiere haber guardado antes." style="display: none; width: 100%; text-align: left; box-sizing: border-box; margin-bottom: 5px;">⬇ Descargar Editable</a>
-<button id="downloadSealedBtn" class="btn-tool" title="Descarga el PDF como imagen (no editable). No permite cambios posteriores." style="display: none; width: 100%; text-align: left; background-color: #ff6b00; color: white; border: none; font-weight: bold;">🔒 Descargar Sellado (No editable)</button>
-                <button id="resetBtn" class="btn-tool" style="width: 100%; text-align: left;">↺ Reiniciar</button>
-                <button id="toggleHeaderBtn" class="btn-tool" style="width: 100%; text-align: left;">👁 Header</button>
-                <button id="openPricingBtn" class="btn-tool" style="width: 100%; text-align: left; color: #ff6b00; font-weight: bold;">💳 Planes y Precios</button>
-            </div>
-        </div>
 
         <!-- Botón toggle de visibilidad de campos (flotante, siempre visible en el editor) -->
         <button id="toggleFieldsBtn" class="fields-toggle-fab" title="Mostrar/ocultar recuadros de campos">
@@ -65,8 +75,7 @@
         <div class="pdf-container" id="pdfContainer"><div id="pdfPages"></div></div>
         
         <button id="zoomBtn" class="zoom-fab">🔍 +</button>
-        <button id="addFieldBtn" class="fab-pencil" title="Dibujar campo manual">✏️</button>
-    </div>
+        </div>
 </main>
 
 <div id="floatingToolbar" class="floating-popover">

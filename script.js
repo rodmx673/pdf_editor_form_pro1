@@ -189,7 +189,7 @@ async function analizarYProcesar() {
         uploadView.style.display = 'none';
         document.body.classList.add('editing-mode');
         editorView.style.display = 'flex';
-        document.getElementById('hamburgerMenu').style.display = 'block';
+        // (hamburgerMenu eliminado — ahora los botones están en el header)
         showHeaderTemporarily();
 
         // NUEVO: Entrar directo en Modo Llenado
@@ -602,15 +602,8 @@ document.getElementById('fillModeBtn')?.addEventListener('click', async () => {
     renderPdf();
 });
 
-document.getElementById('hamburgerBtn')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const dropdown = document.getElementById('hamburgerDropdown');
-    dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
-});
-document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('hamburgerDropdown');
-    if (dropdown && dropdown.style.display === 'flex' && !e.target.closest('#hamburgerMenu')) dropdown.style.display = 'none';
-});
+// (hamburgerBtn eliminado — la barra de acciones del header reemplaza el menú hamburguesa)
+// (hamburgerDropdown eliminado — ya no existe el menú desplegable)
 document.getElementById('resetBtn')?.addEventListener('click', () => {
     if (confirm('¿Reiniciar? Perderás los cambios.')) window.location.reload();
 });
@@ -644,7 +637,7 @@ function selectField(fieldName) {
     floatingToolbar.classList.remove('preview-mode');
     floatingToolbar.style.pointerEvents = 'auto'; // <--- Asegura que el drag funcione
     if (document.getElementById('zoomBtn')) document.getElementById('zoomBtn').style.display = 'none';
-    if (document.getElementById('addFieldBtn')) document.getElementById('addFieldBtn').style.display = 'none';
+    // (addFieldBtn eliminado)
     if (headerElement) { headerElement.classList.add('header-hidden'); document.body.classList.add('header-hidden'); clearTimeout(headerTimeout); }
     if (el) {
         const rect = el.getBoundingClientRect();
@@ -744,7 +737,7 @@ function clearSelection() {
     const helpTip = document.getElementById('helpTooltip');
     if (helpTip) helpTip.style.display = 'none';
     if (document.getElementById('zoomBtn') && document.body.classList.contains('editing-mode')) document.getElementById('zoomBtn').style.display = 'flex';
-    if (document.getElementById('addFieldBtn') && document.body.classList.contains('editing-mode')) document.getElementById('addFieldBtn').style.display = 'flex';
+    // (addFieldBtn eliminado)
 }
 
 document.getElementById('closePopover')?.addEventListener('click', (e) => {
@@ -926,12 +919,6 @@ document.getElementById('helpBtn')?.addEventListener('click', (e) => {
     if (tt) tt.style.display = tt.style.display === 'block' ? 'none' : 'block';
 });
 
-document.getElementById('addFieldBtn')?.addEventListener('click', () => {
-    isDrawingMode = !isDrawingMode;
-    document.body.style.cursor = isDrawingMode ? 'crosshair' : 'default';
-    document.getElementById('addFieldBtn').classList.toggle('active', isDrawingMode);
-});
-
 function setupDrawingEvents(pageDiv, pageIndex) {
     pageDiv.addEventListener('mousedown', (e) => {
         if (!isDrawingMode) return;
@@ -987,7 +974,7 @@ function setupDrawingEvents(pageDiv, pageIndex) {
             selectField(newField.name);
             isDrawingMode = false;
             document.body.style.cursor = 'default';
-            document.getElementById('addFieldBtn').classList.remove('active');
+            // (addFieldBtn eliminado — el botón del lápiz ya no existe)
         }
         box.style.display = 'none';
     });
@@ -1063,23 +1050,7 @@ if (toggleFieldsBtn) {
 }
 
 // Sincronizar la clase 'hamburger-open' con el estado del menú
-function syncHamburgerOpen() {
-    const dropdown = document.getElementById('hamburgerDropdown');
-    if (dropdown && dropdown.style.display === 'flex') {
-        document.body.classList.add('hamburger-open');
-    } else {
-        document.body.classList.remove('hamburger-open');
-    }
-}
-
-// Escuchar clicks del botón hamburguesa (después de su handler original)
-document.addEventListener('click', (e) => {
-    if (e.target.closest('#hamburgerBtn') || e.target.closest('#hamburgerDropdown')) {
-        setTimeout(syncHamburgerOpen, 10);
-    } else if (!e.target.closest('#hamburgerMenu')) {
-        document.body.classList.remove('hamburger-open');
-    }
-});
+// (hamburgerMenu eliminado — syncHamburgerOpen ya no es necesario)
 
 // ── LÓGICA DEL MODAL DE PRECIOS
 document.addEventListener('DOMContentLoaded', () => {
@@ -1090,9 +1061,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (openBtn && modal) {
         openBtn.addEventListener('click', () => {
             modal.style.display = 'flex';
-            // Ocultar el menú hamburguesa al abrir el modal
-            const dropdown = document.getElementById('hamburgerDropdown');
-            if (dropdown) dropdown.style.display = 'none';
         });
     }
 
@@ -1111,3 +1079,81 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
+// ═══════════════════════════════════════════════════════
+// CHECKBOX "ANCLAR HEADER"
+// ═══════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════
+// PESTAÑA FLOTANTE PARA MOSTRAR HEADER
+// ═══════════════════════════════════════════════════════
+
+const headerPeekTab = document.getElementById('headerPeekTab');
+
+if (headerPeekTab) {
+    headerPeekTab.addEventListener('click', () => {
+        // Mostrar el header
+        if (headerElement) headerElement.classList.remove('header-hidden');
+        document.body.classList.remove('header-hidden');
+        document.body.classList.remove('header-unpinned');
+        
+        // Re-anclar automáticamente (activar el checkbox)
+        const pinCheckbox = document.getElementById('pinHeaderCheckbox');
+        if (pinCheckbox) {
+            pinCheckbox.checked = true;
+            // Disparar el evento change para que applyHeaderPin se ejecute
+            pinCheckbox.dispatchEvent(new Event('change'));
+        }
+    });
+}
+
+// Sincronizar la clase body.header-unpinned con el checkbox
+function syncHeaderUnpinnedClass(pinned) {
+    if (pinned) {
+        document.body.classList.remove('header-unpinned');
+    } else {
+        document.body.classList.add('header-unpinned');
+    }
+}
+
+const pinHeaderCheckbox = document.getElementById('pinHeaderCheckbox');
+
+function applyHeaderPin(pinned) {
+    if (pinned) {
+        document.body.classList.add('header-pinned');
+        document.body.classList.remove('header-unpinned');
+        if (headerElement) headerElement.classList.remove('header-hidden');
+        document.body.classList.remove('header-hidden');
+    } else {
+        document.body.classList.remove('header-pinned');
+        document.body.classList.add('header-unpinned');
+        // NO llamar showHeaderTemporarily si ya está visible (evita el "hide" automático)
+        // Solo mostrar la pestaña flotante
+    }
+    localStorage.setItem('header_pinned', pinned ? 'true' : 'false');
+}
+
+if (pinHeaderCheckbox) {
+    const savedState = localStorage.getItem('header_pinned');
+    // Default: anclado (solo desanclado si el usuario explícitamente lo desmarcó)
+    const isPinned = savedState === 'false' ? false : true;
+    pinHeaderCheckbox.checked = isPinned;
+    applyHeaderPin(isPinned);
+
+    pinHeaderCheckbox.addEventListener('change', (e) => {
+        applyHeaderPin(e.target.checked);
+    });
+}
+
+// Sobrescribir showHeaderTemporarily para respetar el pin
+if (typeof showHeaderTemporarily === 'function') {
+    const originalShowHeaderTemporarily = showHeaderTemporarily;
+    window.showHeaderTemporarily = function() {
+        if (localStorage.getItem('header_pinned') === 'true') {
+            if (headerElement) headerElement.classList.remove('header-hidden');
+            document.body.classList.remove('header-hidden');
+            return;
+        }
+        originalShowHeaderTemporarily.apply(this, arguments);
+    };
+}
