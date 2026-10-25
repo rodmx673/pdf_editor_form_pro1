@@ -86,11 +86,19 @@ function updateStepper(step) {
     for (let i=1; i<=4; i++) {
         const el = document.getElementById(`step-${i}`);
         if(!el) continue;
-        if (i<=step) {
+        // Limpiar estados anteriores
+        el.classList.remove('active', 'completed');
+        
+        if (i < step) {
+            // Pasos anteriores: completados (azul pero SIN latir)
+            el.classList.add('completed');
+            el.querySelector('span').style.background = '#0071e3';
+        } else if (i === step) {
+            // Paso actual: activo (azul y LATIENDO)
             el.classList.add('active');
             el.querySelector('span').style.background = '#0071e3';
         } else {
-            el.classList.remove('active');
+            // Pasos futuros: grises
             el.querySelector('span').style.background = '#d2d2d7';
         }
     }
@@ -329,7 +337,13 @@ function createFieldElement(field, pageDiv) {
             input.type = 'checkbox';
             input.style.cssText = 'width:16px;height:16px;min-width:16px;cursor:pointer;margin:0;transform:scale(1.2);transform-origin:center;accent-color:#0071e3;';
             input.checked = field.checked || false;
-            input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); });
+            input.addEventListener('change', (e) => {
+                field.checked = e.target.checked;
+                field.is_edited = true;
+                hasFieldEdits = true;
+                updateUnsavedBadge();
+                triggerAutoSave();
+            });
             checkboxContainer.appendChild(input);
             wrapper.appendChild(checkboxContainer);
         } else if (field.max_len > 0) {
@@ -359,7 +373,11 @@ function createFieldElement(field, pageDiv) {
                     if (e.target.value.length === 1 && i < field.max_len - 1) container.children[i + 1].focus();
                     let val = '';
                     for(let j = 0; j < field.max_len; j++) val += container.children[j].value || '';
-                    field.value = val; triggerAutoSave();
+                    field.value = val;
+                    field.is_edited = true;
+                    hasFieldEdits = true;
+                    updateUnsavedBadge();
+                    triggerAutoSave();
                 });
                 cell.addEventListener('keydown', (e) => {
                     if (e.key === 'Backspace' && !e.target.value && i > 0) container.children[i - 1].focus();
@@ -385,7 +403,13 @@ function createFieldElement(field, pageDiv) {
             let finalSize = (field.font_size || 10) * currentScale;
             if (!field.font_manual && finalSize > boxHeightPx * 0.75) finalSize = boxHeightPx * 0.75;
             input.style.fontSize = Math.max(8, finalSize) + 'px';
-            input.addEventListener('input', (e) => { field.value = e.target.value; triggerAutoSave(); });
+            input.addEventListener('input', (e) => {
+                field.value = e.target.value;
+                field.is_edited = true;
+                hasFieldEdits = true;
+                updateUnsavedBadge();
+                triggerAutoSave();
+            });
             wrapper.appendChild(input);
         }
         div.appendChild(wrapper);
@@ -457,6 +481,18 @@ function validateBeforeDownload(e) {
 
 
 async function forceDownload(url, filename) {
+    // VALIDAR: si hay cambios sin guardar, avisar antes de descargar
+    if (hasFieldEdits) {
+        const proceed = confirm(
+            "⚠️ TIENES CAMBIOS SIN GUARDAR\n\n" +
+            "Si descargas ahora, tus ediciones recientes NO aparecerán en el PDF.\n\n" +
+            "¿Quieres descargar de todos modos?"
+        );
+        if (!proceed) {
+            showToast("💾 Guarda tus cambios primero", "low");
+            return;
+        }
+    }
     try {
         showToast("⏳ Preparando descarga...", "medium");
         const response = await fetch(url);
@@ -491,6 +527,23 @@ function triggerAutoSave() {
     }, 1500);
 }
 
+// ── Helper: valida si hay cambios sin guardar antes de descargar ──
+function checkUnsavedBeforeDownload() {
+    if (hasFieldEdits || currentFields.some(f => f.is_edited)) {
+        const proceed = confirm(
+            "⚠️ TIENES CAMBIOS SIN GUARDAR\n\n" +
+            "Si descargas ahora, tus ediciones recientes NO aparecerán en el PDF.\n\n" +
+            "¿Quieres descargar de todos modos (sin guardar)?\n\n" +
+            "Recomendación: cancela, presiona Guardar, y luego descarga."
+        );
+        if (!proceed) {
+            showToast("💾 Guarda tus cambios primero y vuelve a descargar", "low", 5000);
+            return false;
+        }
+    }
+    return true;
+}
+
 async function performSave() {
     if (!currentSession) return false;
     const updates = currentFields.map(f => ({ name: f.name, rect: f.rect, page: f.page, max_len: f.max_len || 0, font_size: f.font_size || 10, align: f.align || 'left', type_input: f.type_input || 'text', value: f.value || '', checked: f.checked || false, font_manual: f.font_manual || false }));
@@ -498,6 +551,8 @@ async function performSave() {
         const res = await fetch(API_URL + '/api/session/' + currentSession + '/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ updates }) });
         if (!res.ok) throw new Error();
         currentFields.forEach(f => f.is_edited = false);
+        hasFieldEdits = false;
+        updateUnsavedBadge();
         document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('edited-field'));
         const dlBtn = document.getElementById('downloadBtn');
         if (dlBtn) {
@@ -505,6 +560,7 @@ async function performSave() {
             dlBtn.style.display = 'block';
             dlBtn.onclick = (e) => {
                 e.preventDefault();
+                if (!checkUnsavedBeforeDownload()) return;
                 if (validateBeforeDownload(e) !== false) {
                     forceDownload(API_URL + '/api/session/' + currentSession + '/download', 'formulario_lleno.pdf');
                 }
@@ -516,6 +572,7 @@ async function performSave() {
             sealedBtn.style.display = 'block';
             sealedBtn.onclick = (e) => {
                 e.preventDefault();
+                if (!checkUnsavedBeforeDownload()) return;
                 if (validateBeforeDownload(e) !== false) {
                     forceDownload(API_URL + '/api/session/' + currentSession + '/download?sealed=true', 'formulario_sellado.pdf');
                 }
@@ -571,6 +628,7 @@ function selectField(fieldName) {
     if (!field) return;
     originalFieldBackup = JSON.parse(JSON.stringify(field));
     hasFieldEdits = false;
+    updateUnsavedBadge();
     document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('selected'));
     const el = document.querySelector(`[data-field-name="${CSS.escape(fieldName)}"]`);
     if (el) el.classList.add('selected');
@@ -676,7 +734,11 @@ function repositionPopover(fieldEl) {
 
 function clearSelection() {
     selectedFieldName = null;
-    hasFieldEdits = false;
+    // NO resetear hasFieldEdits si hay campos editados pendientes
+    if (!currentFields.some(f => f.is_edited)) {
+        hasFieldEdits = false;
+    }
+    updateUnsavedBadge();
     document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('selected'));
     floatingToolbar.style.display = 'none';
     const helpTip = document.getElementById('helpTooltip');
@@ -706,9 +768,22 @@ document.addEventListener('mousedown', (e) => {
     }
 });
 
+// ── BADGE DE CAMBIOS SIN GUARDAR ──
+function updateUnsavedBadge() {
+    const badge = document.getElementById('unsavedBadge');
+    if (!badge) return;
+    if (hasFieldEdits) {
+        badge.style.display = 'block';
+        badge.title = 'Tienes cambios sin guardar. Debes guardar antes de descargar el PDF.';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
 function markAsEdited(field) {
     field.is_edited = true;
     hasFieldEdits = true;
+    updateUnsavedBadge();
     const el = document.querySelector(`[data-field-name="${CSS.escape(field.name)}"]`);
     if (el) el.classList.add('edited-field');
 }
@@ -815,7 +890,7 @@ document.getElementById('saveFieldBtn')?.addEventListener('click', async (e) => 
         hasFieldEdits = false;
         clearSelection();
         renderPdf();
-        showToast("✅ Cambios aplicados y guardados", "optimal");
+        showToast("✅ Cambios guardados. Ya puedes descargar el PDF con tus ediciones.", "optimal", 6000);
     }
 });
 

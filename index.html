@@ -47,10 +47,10 @@
         <div id="hamburgerMenu">
             <button id="hamburgerBtn">☰</button>
             <div id="hamburgerDropdown">
-                <button id="fillModeBtn" class="btn-tool" style="width: 100%; text-align: left; font-weight: bold; color: #0071e3;">✍️ Modo Llenado</button>
-                <button id="saveBtn" class="btn-tool btn-primary" style="width: 100%; text-align: left;">💾 Guardar</button>
-                <a id="downloadBtn" class="btn-tool btn-success" style="display: none; width: 100%; text-align: left; box-sizing: border-box; margin-bottom: 5px;">⬇ Descargar Editable</a>
-<button id="downloadSealedBtn" class="btn-tool" style="display: none; width: 100%; text-align: left; background-color: #ff6b00; color: white; border: none; font-weight: bold;">🔒 Descargar Sellado (No editable)</button>
+                <button id="fillModeBtn" class="btn-tool" style="width: 100%; text-align: left; font-weight: bold; color: #0071e3;" title="Cambia entre modo Edición (ajustar campos) y modo Llenado (escribir en el formulario)">✍️ Modo Llenado</button>
+                <button id="saveBtn" class="btn-tool btn-primary" style="width: 100%; text-align: left; position: relative;" title="Guarda todos los cambios. Sin esto, tus ediciones no aparecerán en el PDF descargado.">💾 Guardar<span id="unsavedBadge" style="display: none; position: absolute; top: 4px; right: 8px; width: 10px; height: 10px; background: #ff3b30; border-radius: 50%; box-shadow: 0 0 0 2px white;"></span></button>
+                <a id="downloadBtn" class="btn-tool btn-success" title="Descarga el PDF con tus cambios. Requiere haber guardado antes." style="display: none; width: 100%; text-align: left; box-sizing: border-box; margin-bottom: 5px;">⬇ Descargar Editable</a>
+<button id="downloadSealedBtn" class="btn-tool" title="Descarga el PDF como imagen (no editable). No permite cambios posteriores." style="display: none; width: 100%; text-align: left; background-color: #ff6b00; color: white; border: none; font-weight: bold;">🔒 Descargar Sellado (No editable)</button>
                 <button id="resetBtn" class="btn-tool" style="width: 100%; text-align: left;">↺ Reiniciar</button>
                 <button id="toggleHeaderBtn" class="btn-tool" style="width: 100%; text-align: left;">👁 Header</button>
                 <button id="openPricingBtn" class="btn-tool" style="width: 100%; text-align: left; color: #ff6b00; font-weight: bold;">💳 Planes y Precios</button>
@@ -74,7 +74,7 @@
         <span id="popoverTitle">Editar Campo</span>
         <div style="display: flex; gap: 8px;">
             <button id="helpBtn" class="icon-btn" title="Ayuda">?</button>
-            <button id="closePopover" class="icon-btn">✕</button>
+            <button id="closePopover" class="icon-btn" title="Cerrar (sin guardar cambios)">✕</button>
         </div>
     </div>
     

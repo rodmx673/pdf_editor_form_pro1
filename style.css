@@ -838,3 +838,85 @@ body.dark-mode .fields-toggle-fab.active {
         top: 360px;
     }
 }
+
+/* ==========================================
+   EFECTO DE CARGA MEJORADO — anillo más grande
+   y separación con el ícono de la app
+   ========================================== */
+
+/* Contenedor del anillo de carga */
+.app-icon-container {
+    width: 200px !important;           /* antes 120px → 67% más grande */
+    height: 200px !important;
+    padding: 24px !important;          /* antes 15px → más separación */
+    margin: 60px auto 0 auto !important;
+    position: relative;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+/* El ícono de la app dentro del anillo */
+.app-icon-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
+    border-radius: 50%;
+}
+
+/* El anillo giratorio — solo cuando está en estado "processing" */
+.app-icon-container.processing::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0%,
+        rgba(255, 107, 0, 0.15) 40%,
+        #ff6b00 90%,
+        #ff6b00 100%
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 10px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 10px));
+    animation: spin-orange 1.2s linear infinite, pulse-glow 2s ease-in-out infinite;
+    z-index: 1;
+}
+
+/* Halo exterior sutil cuando está procesando */
+.app-icon-container.processing {
+    animation: outer-glow 2s ease-in-out infinite;
+}
+
+@keyframes outer-glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 15px rgba(255, 107, 0, 0.3));
+    }
+    50% {
+        filter: drop-shadow(0 0 30px rgba(255, 107, 0, 0.7));
+    }
+}
+
+/* Responsive: en móvil, mantener proporcionado pero no tan grande */
+@media (max-width: 768px) {
+    .app-icon-container {
+        width: 160px !important;
+        height: 160px !important;
+        padding: 20px !important;
+        margin-top: 40px !important;
+    }
+}
+
+/* En escritorio, aún más separación del ícono */
+@media (min-width: 769px) {
+    .app-icon-container {
+        margin-top: 70px !important;
+    }
+}
