@@ -1278,3 +1278,109 @@ body.header-pinned .pdf-container {
         padding-top: 15px !important;
     }
 }
+
+/* ==========================================
+   BOTÓN FLOTANTE "VER TUTORIAL"
+   ========================================== */
+.tour-fab {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #0071e3;
+    color: #fff;
+    border: 2px solid #fff;
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 113, 227, 0.4);
+    z-index: 1001;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.tour-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 113, 227, 0.6);
+}
+
+body.editing-mode .tour-fab {
+    display: flex;
+}
+
+@media (max-width: 768px) {
+    .tour-fab { width: 44px; height: 44px; font-size: 18px; }
+}
+
+/* ==========================================
+   PERSONALIZACIÓN DE DRIVER.JS
+   ========================================== */
+.driver-popover {
+    background: #fff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25) !important;
+    max-width: 340px !important;
+}
+
+.driver-popover-title {
+    color: #1d1d1f !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    margin-bottom: 8px !important;
+}
+
+.driver-popover-description {
+    color: #444 !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+}
+
+.driver-popover-next-btn,
+.driver-popover-prev-btn {
+    background: #0071e3 !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+}
+
+.driver-popover-prev-btn {
+    background: #e5e5ea !important;
+    color: #1d1d1f !important;
+}
+
+.driver-popover-next-btn:hover { background: #005bb5 !important; }
+
+/* Checkbox "No volver a mostrar" */
+.tour-dont-show-again {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #eee !important;
+    font-size: 12px !important;
+    color: #555 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+.tour-dont-show-again input[type="checkbox"] {
+    margin: 0 !important;
+    width: 14px !important;
+    height: 14px !important;
+    cursor: pointer !important;
+    accent-color: #0071e3 !important;
+}
+
+/* Modo oscuro */
+body.dark-mode .driver-popover { background: #1c1c1e !important; }
+body.dark-mode .driver-popover-title { color: #f5f5f7 !important; }
+body.dark-mode .driver-popover-description { color: #ccc !important; }
+body.dark-mode .tour-dont-show-again { color: #aaa !important; border-top-color: #333 !important; }

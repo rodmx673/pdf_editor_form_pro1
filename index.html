@@ -6,7 +6,9 @@
     <title>PDF Edit Forms</title>
     <link rel="icon" href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
 </head>
 <body>
 
@@ -70,6 +72,11 @@
         <!-- Botón toggle de visibilidad de campos (flotante, siempre visible en el editor) -->
         <button id="toggleFieldsBtn" class="fields-toggle-fab" title="Mostrar/ocultar recuadros de campos">
             👁️ Ocultar Campos
+        </button>
+
+        <!-- Botón "Ver tutorial" flotante -->
+        <button id="tourBtnFloating" class="tour-fab" title="Ver tutorial interactivo">
+            🎓
         </button>
 
         <div class="pdf-container" id="pdfContainer"><div id="pdfPages"></div></div>
