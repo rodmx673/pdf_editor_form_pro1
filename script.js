@@ -278,28 +278,60 @@ function createFieldElement(field, pageDiv) {
         wrapper.style.width = '100%';
         wrapper.style.height = '100%';
 
+        // ── BOTÓN + CON LÍNEA CONECTORA VERTICAL ──
+        const editBtnWrapper = document.createElement('div');
+        editBtnWrapper.style.cssText = 'position:absolute;top:-40px;right:-12px;width:26px;height:40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:120;pointer-events:none;opacity:0;visibility:hidden;transition:opacity 0.2s ease,visibility 0.2s ease;';
+
         const btnEdit = document.createElement('button');
-        btnEdit.innerHTML = '✏️';
+        btnEdit.innerHTML = '+';
         btnEdit.className = 'inline-edit-btn';
-        btnEdit.title = 'Editar este campo';
+        btnEdit.title = 'Editar / agregar campo';
+        btnEdit.style.cssText = 'width:26px;height:26px;padding:0;border:2px solid #ffffff;border-radius:50%;background:#ff6b00;color:#ffffff;font-size:17px;font-weight:bold;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,0.35);pointer-events:auto;transition:transform 0.15s ease,background 0.15s ease;';
+        btnEdit.addEventListener('mouseenter', () => {
+            btnEdit.style.transform = 'scale(1.15)';
+            btnEdit.style.background = '#e65c00';
+        });
+        btnEdit.addEventListener('mouseleave', () => {
+            btnEdit.style.transform = 'scale(1)';
+            btnEdit.style.background = '#ff6b00';
+        });
         btnEdit.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             selectField(field.name);
         });
-        wrapper.appendChild(btnEdit);
 
-        if (field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio'))) {
+        const connector = document.createElement('div');
+        connector.style.cssText = 'width:2px;height:14px;background:#ff6b00;border-radius:1px;';
+
+        editBtnWrapper.appendChild(btnEdit);
+        editBtnWrapper.appendChild(connector);
+
+        div.addEventListener('mouseenter', () => {
+            editBtnWrapper.style.opacity = '1';
+            editBtnWrapper.style.visibility = 'visible';
+        });
+        div.addEventListener('mouseleave', () => {
+            editBtnWrapper.style.opacity = '0';
+            editBtnWrapper.style.visibility = 'hidden';
+        });
+
+        wrapper.appendChild(editBtnWrapper);
+
+        const _effectiveType = ((field.type_input || field.type || 'text') + '').toLowerCase();
+        const isCheckboxVisual = _effectiveType.includes('check') || _effectiveType.includes('radio') || (field.type && (field.type.toLowerCase().includes('check') || field.type.toLowerCase().includes('radio')));
+        if (isCheckboxVisual) {
             div.style.border = 'none';
             div.style.background = 'transparent';
+            const checkboxContainer = document.createElement('div');
+            checkboxContainer.style.cssText = 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;';
             const input = document.createElement('input');
             input.type = 'checkbox';
-            input.style.width = '100%';
-            input.style.height = '100%';
-            input.style.cursor = 'pointer';
+            input.style.cssText = 'width:16px;height:16px;min-width:16px;cursor:pointer;margin:0;transform:scale(1.2);transform-origin:center;accent-color:#0071e3;';
             input.checked = field.checked || false;
             input.addEventListener('change', (e) => { field.checked = e.target.checked; triggerAutoSave(); });
-            wrapper.appendChild(input);
+            checkboxContainer.appendChild(input);
+            wrapper.appendChild(checkboxContainer);
         } else if (field.max_len > 0) {
             div.style.border = 'none';
             div.style.background = 'transparent';
@@ -339,7 +371,9 @@ function createFieldElement(field, pageDiv) {
             div.style.border = '1px solid #0071e3';
             div.style.background = 'rgba(255,255,255,0.9)';
             const input = document.createElement('input');
-            input.type = 'text';
+            const _useNumber = ((field.type_input || 'text') + '').toLowerCase() === 'number';
+            input.type = _useNumber ? 'number' : 'text';
+            if (_useNumber) input.setAttribute('inputmode', 'decimal');
             input.value = field.value || '';
             input.maxLength = 524288;
             input.style.width = '100%';
@@ -597,6 +631,49 @@ function selectField(fieldName) {
     }
 }
 
+// === REPOSITION HELPER (nuevo) ===
+function repositionPopover(fieldEl) {
+    if (!fieldEl) return;
+    const popover = document.getElementById('floatingToolbar');
+    if (!popover) return;
+    popover.style.visibility = 'hidden';
+    popover.style.display = 'flex';
+    const popW = popover.offsetWidth || 320;
+    const popH = popover.offsetHeight || 200;
+    const rect = fieldEl.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const gap = 12;
+    let topPos = 0, leftPos = 0, transformStyle = 'none';
+    if (vw <= 768) {
+        leftPos = vw / 2;
+        transformStyle = 'translate(-50%, 0)';
+        if (rect.top > popH + gap + 20) topPos = rect.top - popH - gap;
+        else if (vh - rect.bottom > popH + gap + 20) topPos = rect.bottom + gap;
+        else { topPos = vh / 2 - popH / 2; leftPos = vw / 2; }
+    } else {
+        leftPos = rect.left + rect.width / 2 - popW / 2;
+        if (leftPos < 10) leftPos = 10;
+        if (leftPos + popW > vw - 10) leftPos = vw - popW - 10;
+        if (rect.top > popH + gap) topPos = rect.top - popH - gap;
+        else if (vh - rect.bottom > popH + gap) topPos = rect.bottom + gap;
+        else {
+            if (rect.right + popW + gap < vw) { leftPos = rect.right + gap; topPos = Math.max(10, rect.top); }
+            else { leftPos = Math.max(10, rect.left - popW - gap); topPos = Math.max(10, rect.top); }
+        }
+    }
+    popover.style.transition = 'none';
+    popover.style.transform = transformStyle;
+    popover.style.left = leftPos + 'px';
+    popover.style.top = topPos + 'px';
+    popover.style.marginTop = '0px';
+    requestAnimationFrame(() => {
+        popover.style.visibility = 'visible';
+        popover.style.transition = '';
+    });
+
+}
+
 function clearSelection() {
     selectedFieldName = null;
     hasFieldEdits = false;
@@ -696,11 +773,38 @@ document.getElementById('propFontSize')?.addEventListener('input', (e) => {
 });
 document.getElementById('propAlign')?.addEventListener('change', (e) => {
     const f = currentFields.find(f => f.name === selectedFieldName);
-    if (f) { f.align = e.target.value; markAsEdited(f); hasFieldEdits = true; }
+    if (f) {
+        f.align = e.target.value;
+        // Feedback en vivo: aplicar text-align al input del campo actual
+        const el = document.querySelector(`[data-field-name="${CSS.escape(f.name)}"]`);
+        if (el) {
+            el.querySelectorAll('input[type="text"]').forEach(inp => {
+                inp.style.textAlign = f.align;
+            });
+        }
+        markAsEdited(f);
+        hasFieldEdits = true;
+    }
 });
 document.getElementById('propType')?.addEventListener('change', (e) => {
     const f = currentFields.find(f => f.name === selectedFieldName);
-    if (f) { f.type_input = e.target.value; markAsEdited(f); hasFieldEdits = true; }
+    if (f) {
+        f.type_input = e.target.value;
+        // Feedback en vivo: re-render del campo (texto ↔ checkbox ↔ comb)
+        const el = document.querySelector(`[data-field-name="${CSS.escape(f.name)}"]`);
+        if (el) {
+            const parent = el.parentNode;
+            const pageIdx = parseInt(parent.dataset.pageNum);
+            // Re-render del campo con el tipo nuevo, sin re-renderizar la página completa
+            el.remove();
+            createFieldElement(f, parent);
+            // Re-seleccionar para que el popover siga abierto y reflejado
+            const newEl = parent.querySelector(`[data-field-name="${CSS.escape(f.name)}"]`);
+            if (newEl) newEl.classList.add('selected');
+        }
+        markAsEdited(f);
+        hasFieldEdits = true;
+    }
 });
 
 
@@ -863,7 +967,46 @@ window.addEventListener('resize', () => {
 });
 
 
-// LÓGICA DEL MODAL DE PRECIOS
+
+// ── TOGGLE "OCULTAR/MOSTRAR CAMPOS" (botón FAB flotante) ──
+let fieldsHidden = false;
+const toggleFieldsBtn = document.getElementById('toggleFieldsBtn');
+
+if (toggleFieldsBtn) {
+    toggleFieldsBtn.addEventListener('click', () => {
+        fieldsHidden = !fieldsHidden;
+        if (fieldsHidden) {
+            document.body.classList.add('fields-hidden');
+            toggleFieldsBtn.innerHTML = '👁️ Mostrar Campos';
+            toggleFieldsBtn.classList.add('active');
+        } else {
+            document.body.classList.remove('fields-hidden');
+            toggleFieldsBtn.innerHTML = '👁️ Ocultar Campos';
+            toggleFieldsBtn.classList.remove('active');
+        }
+    });
+}
+
+// Sincronizar la clase 'hamburger-open' con el estado del menú
+function syncHamburgerOpen() {
+    const dropdown = document.getElementById('hamburgerDropdown');
+    if (dropdown && dropdown.style.display === 'flex') {
+        document.body.classList.add('hamburger-open');
+    } else {
+        document.body.classList.remove('hamburger-open');
+    }
+}
+
+// Escuchar clicks del botón hamburguesa (después de su handler original)
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#hamburgerBtn') || e.target.closest('#hamburgerDropdown')) {
+        setTimeout(syncHamburgerOpen, 10);
+    } else if (!e.target.closest('#hamburgerMenu')) {
+        document.body.classList.remove('hamburger-open');
+    }
+});
+
+// ── LÓGICA DEL MODAL DE PRECIOS
 document.addEventListener('DOMContentLoaded', () => {
     const openBtn = document.getElementById('openPricingBtn');
     const modal = document.getElementById('pricingModal');
