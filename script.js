@@ -1320,15 +1320,62 @@ function runTour(mode) {
     tour.drive();
 }
 
-function maybeAutoTour() {
-    const llenadoVisto = localStorage.getItem('tour_llenado_visto') === TOUR_VERSION;
-    const edicionVisto = localStorage.getItem('tour_edicion_visto') === TOUR_VERSION;
+// ═══════════════════════════════════════════════════════
+// MODAL DE BIENVENIDA AL TOUR
+// ═══════════════════════════════════════════════════════
 
-    if (isFillMode && !llenadoVisto) {
-        setTimeout(() => runTour('fill'), 1500);
-    } else if (!isFillMode && !edicionVisto) {
-        setTimeout(() => runTour('edit'), 1500);
+const TOUR_WELCOME_VERSION = 'v1';
+
+function showTourWelcome() {
+    // Si ya se vio y marcó "no volver a mostrar", no hacer nada
+    if (localStorage.getItem('tour_welcome_visto') === TOUR_WELCOME_VERSION) {
+        return;
     }
+    
+    const modal = document.getElementById('tourWelcomeModal');
+    if (!modal) return;
+    
+    modal.style.display = 'flex';
+}
+
+function hideTourWelcome() {
+    const modal = document.getElementById('tourWelcomeModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Configurar botones del modal al cargar
+document.addEventListener('DOMContentLoaded', () => {
+    const startBtn = document.getElementById('tourStartBtn');
+    const cancelBtn = document.getElementById('tourCancelBtn');
+    const dontShowCheckbox = document.getElementById('tourDontShowCheckbox');
+    
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            if (dontShowCheckbox && dontShowCheckbox.checked) {
+                localStorage.setItem('tour_welcome_visto', TOUR_WELCOME_VERSION);
+            }
+            hideTourWelcome();
+            setTimeout(() => {
+                runTour(isFillMode ? 'fill' : 'edit');
+            }, 300);
+        });
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            if (dontShowCheckbox && dontShowCheckbox.checked) {
+                localStorage.setItem('tour_welcome_visto', TOUR_WELCOME_VERSION);
+            }
+            hideTourWelcome();
+        });
+    }
+});
+
+function maybeAutoTour() {
+    // En lugar de ejecutar el tour directo, mostramos el modal de bienvenida
+    setTimeout(() => {
+        showTourWelcome();
+    }, 1500);
 }
 
 // Botón "Ver tutorial" del header

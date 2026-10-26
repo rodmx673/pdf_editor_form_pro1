@@ -1384,3 +1384,236 @@ body.dark-mode .driver-popover { background: #1c1c1e !important; }
 body.dark-mode .driver-popover-title { color: #f5f5f7 !important; }
 body.dark-mode .driver-popover-description { color: #ccc !important; }
 body.dark-mode .tour-dont-show-again { color: #aaa !important; border-top-color: #333 !important; }
+
+/* ==========================================
+   MODAL DE BIENVENIDA AL TOUR
+   ========================================== */
+.tour-welcome-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.tour-welcome-content {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tour-welcome-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.tour-welcome-content h2 {
+    margin: 0 0 12px 0;
+    color: #1d1d1f;
+    font-size: 22px;
+}
+
+.tour-welcome-content > p {
+    margin: 0 0 16px 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.tour-benefits {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 20px 0;
+    text-align: left;
+}
+
+.tour-benefits li {
+    padding: 8px 12px;
+    background: #f0f7ff;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    color: #0071e3;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+.tour-dont-show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+    margin-bottom: 20px;
+    user-select: none;
+}
+
+.tour-dont-show input {
+    accent-color: #0071e3;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.tour-welcome-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-tour-start {
+    background: #ff6b00;
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-tour-start:hover {
+    background: #e65c00;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.3);
+}
+
+.btn-tour-cancel {
+    background: #f0f0f5;
+    color: #666;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-tour-cancel:hover {
+    background: #e0e0e5;
+}
+
+/* ==========================================
+   DRIVER.JS — POPOVERS EN NARANJA
+   ========================================== */
+.driver-popover {
+    background: linear-gradient(135deg, #ff8c3a, #ff6b00) !important;
+    border: 2px solid #fff !important;
+    box-shadow: 0 8px 24px rgba(255, 107, 0, 0.5) !important;
+    border-radius: 12px !important;
+    max-width: 340px !important;
+}
+
+.driver-popover-title {
+    color: #fff !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    margin-bottom: 8px !important;
+}
+
+.driver-popover-description {
+    color: #fff !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+}
+
+.driver-popover-next-btn,
+.driver-popover-prev-btn {
+    background: #fff !important;
+    color: #ff6b00 !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+}
+
+.driver-popover-prev-btn {
+    background: rgba(255, 255, 255, 0.7) !important;
+}
+
+.driver-popover-next-btn:hover {
+    background: #f5f5f7 !important;
+}
+
+.driver-popover-close-btn {
+    color: #fff !important;
+}
+
+.driver-popover-progress-text {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 12px !important;
+}
+
+/* Checkbox "No volver a mostrar" dentro del popover */
+.tour-dont-show-again {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-top: 10px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+    font-size: 12px !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+.tour-dont-show-again input[type="checkbox"] {
+    margin: 0 !important;
+    width: 14px !important;
+    height: 14px !important;
+    cursor: pointer !important;
+    accent-color: #fff !important;
+}
+
+/* ==========================================
+   MODO OSCURO — MODAL DE BIENVENIDA
+   ========================================== */
+body.dark-mode .tour-welcome-content {
+    background: #1c1c1e;
+    color: #fff;
+}
+
+body.dark-mode .tour-welcome-content h2 {
+    color: #f5f5f7;
+}
+
+body.dark-mode .tour-welcome-content > p {
+    color: #aaa;
+}
+
+body.dark-mode .tour-benefits li {
+    background: #0a2540;
+    color: #5ac8fa;
+}
+
+body.dark-mode .tour-dont-show {
+    color: #aaa;
+}
+
+body.dark-mode .btn-tour-cancel {
+    background: #2c2c2e;
+    color: #fff;
+}
+
+body.dark-mode .btn-tour-cancel:hover {
+    background: #3a3a3c;
+}

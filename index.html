@@ -18,6 +18,28 @@
     <span class="peek-label">Mostrar Header</span>
 </button>
 
+<!-- Modal de bienvenida al tour -->
+<div id="tourWelcomeModal" class="tour-welcome-modal" style="display: none;">
+    <div class="tour-welcome-content">
+        <div class="tour-welcome-icon">🎓</div>
+        <h2>¿Quieres un tour rápido?</h2>
+        <p>Te mostraremos cómo usar la app en <strong>30 segundos</strong>:</p>
+        <ul class="tour-benefits">
+            <li>✓ Subir y procesar tu PDF</li>
+            <li>✓ Llenar los campos del formulario</li>
+            <li>✓ Guardar y descargar</li>
+        </ul>
+        <label class="tour-dont-show">
+            <input type="checkbox" id="tourDontShowCheckbox">
+            No volver a mostrar este aviso
+        </label>
+        <div class="tour-welcome-actions">
+            <button id="tourStartBtn" class="btn-tour-start">Iniciar tour</button>
+            <button id="tourCancelBtn" class="btn-tour-cancel">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <header id="mainHeader">
     <div class="header-toggles">
         <label class="header-pin-label" title="Anclar el header (no se oculta al hacer scroll)">
