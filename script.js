@@ -1,4 +1,4 @@
-try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
+﻿try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
 
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
@@ -151,6 +151,10 @@ if (uploadArea) {
 }
 function selectFile(file) {
     selectedFile = file;
+    const lottieContainer = document.getElementById('lottieContainer');
+    if (lottieContainer) lottieContainer.style.display = 'block';
+    const uploadText = uploadArea.querySelector('p');
+    if (uploadText) uploadText.style.display = 'none';
     uploadArea.querySelector('p').textContent = '⏳ Analizando calidad del PDF...';
     uploadArea.classList.add('processing');
     const spinner = document.getElementById('appIconSpinner');
