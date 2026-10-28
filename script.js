@@ -592,6 +592,12 @@ async function performSave() {
             dlBtn.style.display = 'block';
             dlBtn.onclick = (e) => {
                 e.preventDefault();
+                // ⚡ PRIMERO: Verificar pago
+                if (localStorage.getItem('usuario_premium') !== 'true') {
+                    document.getElementById('pricingModal').style.display = 'flex';
+                    return; // Detiene la descarga
+                }
+                // Si ya pagó, sigue con las validaciones normales
                 if (!checkUnsavedBeforeDownload()) return;
                 if (validateBeforeDownload(e) !== false) {
                     forceDownload(API_URL + '/api/session/' + currentSession + '/download', 'formulario_lleno.pdf');
@@ -604,6 +610,12 @@ async function performSave() {
             sealedBtn.style.display = 'block';
             sealedBtn.onclick = (e) => {
                 e.preventDefault();
+                // ⚡ PRIMERO: Verificar pago
+                if (localStorage.getItem('usuario_premium') !== 'true') {
+                    document.getElementById('pricingModal').style.display = 'flex';
+                    return; // Detiene la descarga
+                }
+                // Si ya pagó, sigue con las validaciones normales
                 if (!checkUnsavedBeforeDownload()) return;
                 if (validateBeforeDownload(e) !== false) {
                     forceDownload(API_URL + '/api/session/' + currentSession + '/download?sealed=true', 'formulario_sellado.pdf');
@@ -1461,3 +1473,5 @@ window._paywallStatus = function() {
     }).length;
     return { total: total, filled: filled, percentage: ((filled/total)*100).toFixed(1) + '%', isPaid: sessionIsPaid };
 };
+
+
