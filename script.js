@@ -27,6 +27,10 @@ function showToast(message, type = 'optimal') {
 
 let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 
+// ── PAYWALL STATE ──
+let sessionIsPaid = false;
+let paywallShown = false;
+
 // LOGICA PARA ARRASTRAR EL POPOVER
 let isDraggingPopover = false, popoverStartX, popoverStartY, popoverStartLeft, popoverStartTop;
 
@@ -230,6 +234,8 @@ async function renderPdf() {
     if (isZoomed) pdfContainer.classList.add('zoomed');
     else pdfContainer.classList.remove('zoomed');
     const outputScale = Math.max(window.devicePixelRatio || 1, 2);
+    const totalFieldsCount = currentFields.length;
+    const freeThreshold = Math.ceil(totalFieldsCount * 0.3);
 
     for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
         const page = await pdfDoc.getPage(pageNum);
@@ -250,7 +256,7 @@ async function renderPdf() {
         pdfPages.appendChild(pageDiv);
         await page.render(renderContext).promise;
         const pageFields = currentFields.filter(f => f.page === pageNum - 1);
-        pageFields.forEach(field => createFieldElement(field, pageDiv));
+        if (!sessionIsPaid) { const overlay = document.createElement("div"); overlay.className = "paywall-overlay"; overlay.style.cssText = "position:absolute;bottom:0;left:0;right:0;height:66%;background:rgba(0,0,0,0.35);pointer-events:auto;z-index:40;border-radius:0 0 8px 8px;display:flex;align-items:center;justify-content:center;"; overlay.innerHTML = "<div style=\"background:rgba(255,255,255,0.95);padding:20px 30px;border-radius:12px;text-align:center;\"><p style=\"margin:0 0 10px 0;font-weight:bold;color:#333;\">🔒 Contenido bloqueado</p><p style=\"margin:0;color:#666;font-size:13px;\">Llena el 30% para desbloquear el resto</p></div>"; pageDiv.appendChild(overlay); } pageFields.forEach(field => { const fieldIndex = currentFields.indexOf(field); const shouldLock = !sessionIsPaid && fieldIndex >= freeThreshold; createFieldElement(field, pageDiv, shouldLock); });
         setupDrawingEvents(pageDiv, pageNum - 1);
     }
     pdfContainer.scrollTop = scrollTop;
@@ -264,7 +270,29 @@ document.getElementById('zoomBtn')?.addEventListener('click', () => {
 });
 
 // CAMPOS Y MODO LLENADO
-function createFieldElement(field, pageDiv) {
+function createFieldElement(field, pageDiv, shouldLock = false) {
+    if (shouldLock) {
+        const lockedDiv = document.createElement('div');
+        lockedDiv.className = 'field-rect locked';
+        lockedDiv.style.position = 'absolute';
+        lockedDiv.style.left = (field.rect[0] * currentScale) + 'px';
+        lockedDiv.style.top = (field.rect[1] * currentScale) + 'px';
+        lockedDiv.style.width = ((field.rect[2] - field.rect[0]) * currentScale) + 'px';
+        lockedDiv.style.height = ((field.rect[3] - field.rect[1]) * currentScale) + 'px';
+        lockedDiv.style.background = 'repeating-linear-gradient(45deg, rgba(255,107,0,0.15), rgba(255,107,0,0.15) 10px, rgba(255,107,0,0.35) 10px, rgba(255,107,0,0.35) 20px)';
+        lockedDiv.style.border = '2px solid #ff6b00';
+        lockedDiv.style.borderRadius = '3px';
+        lockedDiv.style.display = 'flex';
+        lockedDiv.style.alignItems = 'center';
+        lockedDiv.style.justifyContent = 'center';
+        lockedDiv.style.cursor = 'not-allowed';
+        lockedDiv.style.zIndex = '45';
+        lockedDiv.innerHTML = '<span style="font-size:18px;">🔒</span>';
+        lockedDiv.dataset.fieldName = field.name;
+        lockedDiv.addEventListener('click', function() { showPaywallModal(); });
+        pageDiv.appendChild(lockedDiv);
+        return;
+    }
     const div = document.createElement('div');
     div.className = 'field-rect';
     if (field.max_len > 0 && !isFillMode) {
@@ -346,7 +374,7 @@ function createFieldElement(field, pageDiv) {
                 field.is_edited = true;
                 hasFieldEdits = true;
                 updateUnsavedBadge();
-                triggerAutoSave();
+                triggerAutoSave(); updatePaywallProgress();
             });
             checkboxContainer.appendChild(input);
             wrapper.appendChild(checkboxContainer);
@@ -381,7 +409,7 @@ function createFieldElement(field, pageDiv) {
                     field.is_edited = true;
                     hasFieldEdits = true;
                     updateUnsavedBadge();
-                    triggerAutoSave();
+                    triggerAutoSave(); updatePaywallProgress();
                 });
                 cell.addEventListener('keydown', (e) => {
                     if (e.key === 'Backspace' && !e.target.value && i > 0) container.children[i - 1].focus();
@@ -412,7 +440,7 @@ function createFieldElement(field, pageDiv) {
                 field.is_edited = true;
                 hasFieldEdits = true;
                 updateUnsavedBadge();
-                triggerAutoSave();
+                triggerAutoSave(); updatePaywallProgress();
             });
             wrapper.appendChild(input);
         }
@@ -1019,7 +1047,7 @@ document.addEventListener('mouseup', () => {
     dragField.rect = [newX, newY, newX + w, newY + h];
     markAsEdited(dragField);
     if (floatingToolbar.style.display !== 'flex') {
-        triggerAutoSave();
+        triggerAutoSave(); updatePaywallProgress();
         hasFieldEdits = false;
     }
     dragEl = null;
@@ -1391,3 +1419,45 @@ document.getElementById('tourBtnFloating')?.addEventListener('click', (e) => {
 });
 
 window.__maybeAutoTour = maybeAutoTour;
+
+// ═══════════════════════════════════════════════════════
+// PAYWALL: MODAL + PROGRESO DEL 30%
+// ═══════════════════════════════════════════════════════
+
+function updatePaywallProgress() {
+    if (sessionIsPaid) return;
+    const totalFields = currentFields.length;
+    if (totalFields === 0) return;
+    const filledFields = currentFields.filter(function(f) {
+        const isCheckbox = f.type && (f.type.toLowerCase().indexOf('check') !== -1 || f.type.toLowerCase().indexOf('radio') !== -1);
+        if (isCheckbox) return f.checked;
+        return f.value && f.value.trim() !== '';
+    }).length;
+    const percentage = (filledFields / totalFields) * 100;
+    if (percentage >= 30 && !paywallShown) {
+        showPaywallModal();
+    }
+}
+
+function showPaywallModal() {
+    if (sessionIsPaid || paywallShown) return;
+    paywallShown = true;
+    const overlay = document.createElement('div');
+    overlay.id = 'paywallOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:50000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);';
+    overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:40px;max-width:500px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);"><div style="font-size:64px;margin-bottom:20px;">🔒</div><h2 style="margin:0 0 10px 0;color:#1d1d1f;font-size:24px;">Has alcanzado el límite de prueba</h2><p style="color:#666;font-size:15px;margin-bottom:25px;line-height:1.6;">Has completado el 30% de los campos. Para desbloquear el resto del documento y descargarlo, adquiere uno de nuestros planes.</p><div style="display:flex;gap:12px;margin-bottom:20px;"><button onclick="purchasePlan(\'basico\')" style="flex:1;padding:14px;background:#ff6b00;color:white;border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;">Plan Básico<br><span style="font-size:20px;">\.99</span></button><button onclick="purchasePlan(\'pro\')" style="flex:1;padding:14px;background:#0071e3;color:white;border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;">Plan Pro<br><span style="font-size:20px;">\.99</span></button></div><button onclick="document.getElementById(\'paywallOverlay\').remove();paywallShown=false;" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;text-decoration:underline;">Seguir explorando (sin editar)</button></div>';
+    document.body.appendChild(overlay);
+}
+
+function purchasePlan(plan) {
+    alert('🚧 El sistema de pago con PayPal estará disponible pronto.\n\nPlan seleccionado: ' + plan.toUpperCase());
+}
+
+window._paywallStatus = function() {
+    const total = currentFields.length;
+    const filled = currentFields.filter(function(f) {
+        const isCb = f.type && (f.type.toLowerCase().indexOf('check') !== -1 || f.type.toLowerCase().indexOf('radio') !== -1);
+        return isCb ? f.checked : (f.value && f.value.trim() !== '');
+    }).length;
+    return { total: total, filled: filled, percentage: ((filled/total)*100).toFixed(1) + '%', isPaid: sessionIsPaid };
+};

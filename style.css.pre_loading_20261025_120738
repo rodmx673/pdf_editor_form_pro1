@@ -1,0 +1,840 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, sans-serif; background-color: #f5f5f7; color: #1d1d1f; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+
+/* HEADER */
+header { text-align: center; padding: 15px; background: #ffffff; border-bottom: 1px solid #eaeaea; position: relative; z-index: 10; }
+.header-toggles { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; }
+.toggle-btn { background: #f0f0f5; border: none; padding: 6px 10px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 12px; color: #333; }
+.main-logo { max-width: 180px; margin-bottom: 15px; }
+.stepper-container { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 11px; font-weight: bold; color: #888; }
+.step { display: flex; align-items: center; gap: 5px; }
+.step span:first-child { background: #d2d2d7; color: white; border-radius: 50%; width: 18px; height: 18px; display: inline-flex; justify-content: center; align-items: center; }
+.step.active { color: #0071e3; }
+.step.active span:first-child { background: #0071e3; }
+.step-line { height: 2px; width: 15px; background: #d2d2d7; }
+
+/* LANDING PAGE */
+.app-main { flex: 1; display: flex; flex-direction: column; }
+#uploadView { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 30px 15px; }
+.upload-area { width: 100%; max-width: 380px; border: 2px dashed #d2d2d7; border-radius: 16px; background-color: #ffffff; padding: 40px 20px; text-align: center; cursor: pointer; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+.upload-area:hover { border-color: #0071e3; }
+.upload-icon { font-size: 32px; margin-bottom: 10px; }
+.upload-area p { font-size: 14px; color: #666; }
+.app-branding { margin-top: 30px; display: flex; flex-direction: column; align-items: center; }
+.app-icon-container img { width: 70px; height: 70px; border-radius: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.1); margin-bottom: 10px; }
+.app-branding span { font-size: 10px; font-weight: bold; letter-spacing: 1.5px; color: #888; }
+
+/* EDITOR MODE */
+body.editing-mode { height: 100vh; overflow: hidden; }
+body.editing-mode .app-main { position: absolute; top: 0; left: 0; width: 100%; height: 100vh; }
+body.editing-mode header { position: fixed; top: 0; left: 0; width: 100%; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(0,0,0,0.1); transition: transform 0.4s; }
+body.editing-mode header.header-hidden { transform: translateY(-100%); }
+
+#editorView { flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden; position: relative; }
+.pdf-container { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; padding: 15px; padding-top: 130px; padding-bottom: 50px; scroll-snap-type: y mandatory; transition: padding-top 0.3s ease; }
+body.header-hidden .pdf-container { padding-top: 15px; }
+.pdf-page { position: relative; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); background: white; border-radius: 8px; overflow: hidden; scroll-snap-align: center; max-width: 100%; width: 100%; display: flex; justify-content: center; }
+.pdf-page canvas { max-width: 100%; height: auto !important; }
+.field-rect { position: absolute; border: 2px solid #0071e3; background-color: rgba(0, 113, 227, 0.1); cursor: move; }
+.field-rect.selected { border-color: #ff6b00; background-color: rgba(255, 107, 0, 0.2); z-index: 10; }
+
+/* MENÚ HAMBURGUESA */
+#hamburgerMenu { display: none; position: absolute; top: 15px; right: 15px; z-index: 1005; }
+#hamburgerBtn { background: #f0f0f5; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+#hamburgerDropdown { display: none; position: absolute; top: 50px; right: 0; background: white; border: 1px solid #eaeaea; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); padding: 10px; min-width: 180px; flex-direction: column; gap: 8px; }
+
+/* POPOVER FLOTANTE */
+.floating-popover { position: fixed; display: none; flex-direction: column; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); padding: 12px; z-index: 10000; width: 320px; transform: translate(-50%, -100%); margin-top: -10px; }
+.popover-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+#popoverTitle { font-size: 12px; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.icon-btn { background: #f0f0f5; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; color: #555; display: flex; align-items: center; justify-content: center; }
+#helpTooltip { display: none; background: #f8f8fa; padding: 10px; border-radius: 8px; font-size: 12px; color: #666; margin-bottom: 10px; }
+#fieldProperties { display: flex; flex-wrap: wrap; gap: 10px; }
+.prop-item { display: flex; flex-direction: column; flex: 1; min-width: 60px; }
+.prop-item label { font-size: 10px; color: #888; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
+.prop-item input, .prop-item select { padding: 5px; border-radius: 6px; border: 1px solid #ccc; font-size: 12px; width: 100%; }
+
+/* BOTONES FLOTANTES (FAB) */
+.zoom-fab, .fab-pencil { position: fixed; right: 20px; width: 50px; height: 50px; border-radius: 50%; color: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 900; font-size: 20px; cursor: pointer; display: none; align-items: center; justify-content: center; transition: transform 0.2s; }
+body.editing-mode .zoom-fab, body.editing-mode .fab-pencil { display: flex; }
+.zoom-fab { bottom: 80px; background: rgba(0, 113, 227, 0.9); }
+.fab-pencil { bottom: 140px; background: #ff6b00; }
+.fab-pencil.active { background: #28a745; box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); }
+
+/* BOTONES COMUNES */
+.btn-tool { padding: 8px 15px; border-radius: 8px; border: 1px solid #ddd; background: #fff; cursor: pointer; font-weight: 500; font-size: 13px; white-space: nowrap; color: #333; display: inline-block; text-align: center; text-decoration: none;}
+.btn-primary { background: #0071e3; color: white; border-color: #0071e3; }
+.btn-success { background: #28a745; color: white; border-color: #28a745; }
+.btn-danger { background: #dc3545; color: white; border-color: #dc3545; }
+
+/* MODO OSCURO */
+body.dark-mode { background-color: #121212; color: #e5e5ea; }
+body.dark-mode header { background: rgba(28, 28, 30, 0.85); border-bottom: 1px solid #333; }
+body.dark-mode .toggle-btn { background: #2c2c2e; color: white; }
+body.dark-mode .upload-area { background: #1c1c1e; border-color: #444; }
+body.dark-mode .upload-area p { color: #aaa; }
+body.dark-mode #hamburgerBtn, body.dark-mode #hamburgerDropdown { background: #1c1c1e; border-color: #333; }
+body.dark-mode .btn-tool { background: #2c2c2e; border-color: #444; color: white; }
+body.dark-mode .floating-popover { background: rgba(28, 28, 30, 0.95); border-color: #444; }
+body.dark-mode #popoverTitle { color: #eee; }
+body.dark-mode .icon-btn { background: #333; color: #fff; }
+body.dark-mode .prop-item input, body.dark-mode .prop-item select { background: #222; border-color: #444; color: #fff; }
+body.dark-mode #helpTooltip { background: #333; color: #ccc; }
+
+/* ==========================================
+   EFECTO DE CARGA (ANILLO Y RECUADRO NARANJA)
+   ========================================== */
+@keyframes spin-orange {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse-glow {
+    0% { box-shadow: 0 0 10px rgba(255, 107, 0, 0.4); }
+    50% { box-shadow: 0 0 30px rgba(255, 107, 0, 0.9); }
+    100% { box-shadow: 0 0 10px rgba(255, 107, 0, 0.4); }
+}
+
+/* Contenedor del icono para el anillo */
+.app-icon-container {
+    position: relative;
+    width: 120px !important;
+    height: 120px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 15px !important;
+    box-sizing: border-box;
+    border-radius: 50%;
+    margin: 40px auto 0 auto !important;
+    transition: all 0.3s ease;
+}
+
+.app-icon-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
+}
+
+/* El anillo de luz giratorio */
+.app-icon-container.processing::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0%, rgba(255, 107, 0, 0.1) 40%, #ff6b00 90%, #ff6b00 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 8px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 8px));
+    animation: spin-orange 1.2s linear infinite, pulse-glow 2s ease-in-out infinite;
+    z-index: 1;
+}
+
+/* Recuadro naranja al procesar */
+#uploadArea.processing {
+    background-color: rgba(255, 107, 0, 0.05) !important;
+    border: 2px dashed #ff6b00 !important;
+    box-shadow: 0 0 15px rgba(255, 107, 0, 0.2);
+}
+
+#uploadArea.processing p {
+    color: #ff6b00 !important;
+    font-weight: bold;
+}
+
+/* Recuadro naranja en modo oscuro */
+body.dark-mode #uploadArea.processing {
+    background-color: rgba(255, 107, 0, 0.15) !important;
+}
+
+/* ==========================================
+   CORRECCIÓN: BOTÓN HAMBURGUESA Y DROPDOWN
+   ========================================== */
+
+/* Modo Claro */
+#hamburgerBtn {
+    background: #ffffff;
+    color: #333333;
+    border: 1px solid #eaeaea;
+}
+#hamburgerDropdown {
+    background: #ffffff;
+    border: 1px solid #eaeaea;
+}
+
+/* Modo Oscuro */
+body.dark-mode #hamburgerBtn {
+    background: #2c2c2e;
+    color: #ffffff;
+    border: 1px solid #444;
+}
+body.dark-mode #hamburgerDropdown {
+    background: #1c1c1e;
+    border: 1px solid #444;
+}
+body.dark-mode #hamburgerDropdown .btn-tool {
+    background: #2c2c2e;
+    color: #ffffff;
+    border: 1px solid #444;
+}
+body.dark-mode #hamburgerDropdown .btn-tool:hover {
+    background: #3a3a3c;
+}
+
+/* ==========================================
+   ESTILO PARA CAMPOS EDITADOS (NARANJA)
+   ========================================== */
+.field-rect.edited-field {
+    border: 2px solid #ff6b00 !important;
+    background-color: rgba(255, 107, 0, 0.15) !important;
+}
+
+
+
+/* ==========================================
+   POPOVER FLOTANTE (REDISEÑO HORIZONTAL Y DRAG)
+   ========================================== */
+.floating-popover {
+    position: fixed;
+    display: none;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    padding: 8px 12px;
+    z-index: 10000;
+    width: auto;
+    min-width: 300px;
+    max-width: 90vw;
+    /* Quitamos el transform de aquí para manejarlo con JS */
+}
+
+.popover-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #eee;
+    cursor: grab; /* Cursor de arrastre */
+}
+.popover-header:active { cursor: grabbing; }
+
+#popoverTitle {
+    font-size: 11px;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.icon-btn {
+    background: #f0f0f5;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+.icon-btn:hover { background: #e0e0e5; }
+
+/* Hacer las propiedades horizontales */
+#fieldProperties {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    align-items: center;
+    overflow-x: auto;
+}
+#fieldProperties::-webkit-scrollbar { display: none; }
+
+.prop-item {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    min-width: 50px;
+}
+.prop-item label {
+    font-size: 9px;
+    color: #888;
+    font-weight: bold;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+}
+.prop-item input, .prop-item select {
+    padding: 4px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 11px;
+    width: 100%;
+}
+
+/* Botón de borrar más compacto */
+.btn-danger {
+    padding: 4px 8px;
+    font-size: 11px;
+    margin-top: 15px; /* Alinearlo con los inputs */
+}
+
+/* Modo oscuro para el popover */
+body.dark-mode .floating-popover {
+    background: rgba(28, 28, 30, 0.95);
+    border-color: #444;
+}
+body.dark-mode .popover-header { border-bottom-color: #444; }
+body.dark-mode #popoverTitle { color: #eee; }
+body.dark-mode .icon-btn { background: #333; color: #fff; }
+body.dark-mode .prop-item input, body.dark-mode .prop-item select {
+    background: #222; border-color: #444; color: #fff;
+}
+
+/* ==========================================
+   NOTIFICACIONES TOAST (CALIDAD DE PDF)
+   ========================================== */
+.toast {
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: slideUpFade 0.3s ease forwards;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 90vw;
+}
+.toast.optimal { background: #28a745; }
+.toast.low { background: #ff6b00; }
+.toast.medium, .toast.high { background: #0071e3; }
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.toast.hiding {
+    animation: fadeOut 0.3s ease forwards;
+}
+@keyframes fadeOut {
+    to { opacity: 0; transform: translateY(10px); }
+}
+
+/* ==========================================
+   BOTÓN DE EDICIÓN RÁPIDA (MODO LLENADO)
+   ========================================== */
+.inline-edit-btn {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: #ff6b00;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    transition: transform 0.2s, background 0.2s;
+}
+
+.inline-edit-btn:hover {
+    transform: scale(1.2);
+    background: #e65c00;
+}
+
+body.dark-mode .inline-edit-btn {
+    border-color: #333;
+}
+
+/* ==========================================
+   BOTÓN DE EDICIÓN RÁPIDA (ESTILO PREMIUM E INVISIBLE)
+   ========================================== */
+.inline-edit-btn {
+    position: absolute;
+    top: -8px; 
+    right: -8px;
+    background: #888888; /* Gris por defecto */
+    color: white;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    
+    /* TOTALMENTE INVISIBLE Y SIN CLICS POR DEFECTO */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease, background 0.2s ease;
+}
+
+/* 1. Mostrar tenue y permitir clics SOLO cuando el usuario pasa el mouse o toca el campo */
+.field-rect:hover .inline-edit-btn,
+.field-rect:focus-within .inline-edit-btn {
+    opacity: 0.4;
+    visibility: visible;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+/* 2. Iluminar totalmente y mostrar vista previa cuando el mouse está sobre el lápiz */
+.field-rect .inline-edit-btn:hover {
+    opacity: 1 !important;
+    background: #ff6b00;
+    border-color: white;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.6);
+}
+
+/* 3. Estilo de Vista Previa para el menú flotante */
+.floating-popover.preview-mode {
+    opacity: 0.6;
+    transform: translate(-50%, -100%) scale(0.95) !important;
+    box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
+    border: 1px dashed #ff6b00;
+    pointer-events: none; /* No bloquea el clic en el lápiz */
+}
+
+/* ==========================================
+   EFECTO SHAKE PARA ERRORES EN EL MENÚ
+   ========================================== */
+@keyframes shakePopover {
+    0% { transform: translate(-50%, 0) translateX(0); }
+    20% { transform: translate(-50%, 0) translateX(-8px); }
+    40% { transform: translate(-50%, 0) translateX(8px); }
+    60% { transform: translate(-50%, 0) translateX(-8px); }
+    80% { transform: translate(-50%, 0) translateX(8px); }
+    100% { transform: translate(-50%, 0) translateX(0); }
+}
+
+.shake-effect {
+    animation: shakePopover 0.4s ease-in-out;
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 15px rgba(220, 53, 69, 0.5) !important;
+}
+
+/* ==========================================
+   NOTIFICACIONES TOAST
+   ========================================== */
+.toast {
+    padding: 12px 20px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: slideUpFade 0.3s ease forwards;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 90vw;
+}
+.toast.optimal { background: #28a745; }
+.toast.low { background: #ff6b00; }
+.toast.medium, .toast.high { background: #0071e3; }
+
+@keyframes slideUpFade {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.toast.hiding {
+    animation: fadeOut 0.3s ease forwards;
+}
+@keyframes fadeOut {
+    to { opacity: 0; transform: translateY(10px); }
+}
+
+/* ==========================================
+   MENÚ FLOTANTE (FLEXIBLE Y RESPONSIVO)
+   ========================================== */
+.floating-popover {
+    position: fixed;
+    display: none;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    padding: 12px;
+    z-index: 10000;
+    width: 95vw; /* Ocupa casi todo el ancho en móvil */
+    max-width: 600px; /* Pero no se estira demasiado en PC */
+}
+
+#fieldProperties {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los inputs bajen de línea */
+    gap: 10px;
+    justify-content: center;
+}
+
+/* Contenedor de botones de acción (Guardar, Cancelar, Borrar) */
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+/* ==========================================
+   TAMAÑO DE LA CAJA DE SUBIDA EN PC (ESCRITORIO)
+   ========================================== */
+@media (min-width: 769px) {
+    .upload-area {
+        max-width: 700px !important; /* Mucho más ancha */
+        padding: 80px 40px !important; /* Mucho más alta */
+        border-radius: 24px !important;
+    }
+    
+    .upload-area .upload-icon {
+        font-size: 60px !important; /* Icono de PDF más grande */
+        margin-bottom: 20px !important;
+    }
+    
+    .upload-area p {
+        font-size: 20px !important; /* Texto más grande y fácil de leer */
+    }
+
+    .app-branding img {
+        width: 120px !important; /* El logo de la app también crece un poco */
+        height: 120px !important;
+        margin-top: 40px !important;
+    }
+    
+    .app-branding span {
+        font-size: 14px !important; /* Texto de "PDF EDIT FORMS APP" más grande */
+    }
+}
+
+/* ==========================================
+   AJUSTE DE SEPARACIÓN ENTRE LOGO Y TEXTO (FOOTER)
+   ========================================== */
+.app-branding {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Esta línea separa automáticamente el logo del texto */
+}
+
+.app-icon-container img {
+    margin-bottom: 0 !important; /* Quitamos el margen inferior porque usamos gap */
+}
+
+.app-branding span {
+    margin-top: 0;
+    display: block;
+    text-align: center;
+}
+
+@media (min-width: 769px) {
+    .app-branding {
+        gap: 25px; /* Más espacio en PC para que respire mejor */
+        margin-top: 20px;
+    }
+    .app-icon-container img {
+        margin-top: 0 !important; /* Eliminamos el margin-top extra que causaba el solapamiento */
+    }
+}
+
+/* ==========================================
+   MODAL DE PRECIOS (MODO OSCURO)
+   ========================================== */
+body.dark-mode #pricingModal > div {
+    background: #1c1c1e !important;
+    border: 1px solid #333;
+}
+body.dark-mode #pricingModal h2, 
+body.dark-mode #pricingModal h3, 
+body.dark-mode #pricingModal div[style*="font-size: 36px"] {
+    color: #f5f5f7 !important;
+}
+body.dark-mode #pricingModal .pricing-card-1 {
+    background: #2c1a0f !important;
+}
+body.dark-mode #pricingModal .pricing-card-2 {
+    background: #1c1c1e !important;
+    border-color: #444 !important;
+}
+body.dark-mode #pricingModal ul {
+    color: #aaa !important;
+}
+body.dark-mode #pricingModal p {
+    color: #888 !important;
+}
+body.dark-mode #closePricingBtn {
+    background: #333 !important;
+    color: white !important;
+}
+
+
+/* ==========================================
+   LATIDO DEL PUNTO ACTIVO EN EL STEPPER
+   ========================================== */
+@keyframes pulse-blue {
+    0%   { box-shadow: 0 0 0 0   rgba(0, 113, 227, 0.7); }
+    70%  { box-shadow: 0 0 0 8px rgba(0, 113, 227, 0); }
+    100% { box-shadow: 0 0 0 0   rgba(0, 113, 227, 0); }
+}
+
+.step.active span:first-child {
+    animation: pulse-blue 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .step.active span:first-child {
+        animation: none;
+    }
+}
+/* ==========================================
+   BOTÓN DE EDICIÓN "MÁS" (+) FLOTANTE
+   Encima del campo con línea conectora vertical
+   ========================================== */
+
+/* Wrapper del botón: se posiciona encima del field-rect */
+.field-rect .edit-btn-wrapper {
+    position: absolute;
+    top: -22px;                    /* flota 22px arriba del recuadro */
+    right: -12px;                  /* alineado a la derecha, sobresale un poco */
+    width: 24px;
+    height: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 110;
+    pointer-events: none;          /* invisible por defecto para clics */
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.8);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+
+/* Mostrar al hacer hover o focus sobre el campo */
+.field-rect:hover .edit-btn-wrapper,
+.field-rect:focus-within .edit-btn-wrapper {
+    opacity: 0.55;
+    visibility: visible;
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+/* Iluminar totalmente cuando el mouse está SOBRE el botón */
+.field-rect .edit-btn-wrapper:hover {
+    opacity: 1 !important;
+}
+
+/* Botón circular con + */
+.field-rect .inline-edit-btn {
+    /* Resetear estilos anteriores */
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1.5px solid #ffffff;
+    background: #ff6b00;
+    color: #ffffff;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+    /* Animación al hover */
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    /* Resetear opacidades viejas */
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.field-rect .inline-edit-btn:hover {
+    background: #e65c00;
+    transform: scale(1.15);
+    box-shadow: 0 0 10px rgba(255, 107, 0, 0.6);
+}
+
+/* Línea vertical conectora entre el botón y el campo */
+.field-rect .inline-edit-btn::after {
+    content: '';
+    position: absolute;
+    top: 100%;                     /* empieza donde termina el botón */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1.5px;
+    height: 12px;                  /* largo de la línea conectora */
+    background: #ff6b00;
+    border-radius: 1px;
+}
+
+/* Modo oscuro */
+body.dark-mode .field-rect .inline-edit-btn {
+    border-color: #1c1c1e;
+    background: #ff6b00;
+    color: #ffffff;
+}
+body.dark-mode .field-rect .inline-edit-btn:hover {
+    background: #ff8533;
+}
+body.dark-mode .field-rect .inline-edit-btn::after {
+    background: #ff6b00;
+}
+
+/* ==========================================
+   MODO "OCULTAR CAMPOS" (transparente)
+   ========================================== */
+
+/* Cuando body tiene la clase 'fields-hidden', todos los field-rect pierden fondo/borde */
+body.fields-hidden .field-rect {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    background-image: none !important;
+}
+
+/* Inputs dentro de los campos: fondo y borde transparentes, pero TEXTO VISIBLE */
+body.fields-hidden .field-rect input,
+body.fields-hidden .field-rect input[type="text"],
+body.fields-hidden .field-rect input[type="number"] {
+    background: transparent !important;
+    border-color: transparent !important;
+    color: #1d1d1f !important;
+    caret-color: #0071e3 !important;
+}
+
+/* Checkboxes: mantener el check visible pero sin fondo azul */
+body.fields-hidden .field-rect input[type="checkbox"] {
+    background: transparent !important;
+    border-color: transparent !important;
+    opacity: 1 !important;
+}
+
+/* El botón + y el preview Aa: ocultos también */
+body.fields-hidden .field-rect .inline-edit-btn,
+body.fields-hidden .field-rect .edit-btn-wrapper,
+body.fields-hidden .field-rect .edit-btn-wrapper span,
+body.fields-hidden .field-rect > div > .edit-btn-wrapper {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Overlay transparente (sin el fondo azul) */
+body.fields-hidden .field-rect::before {
+    display: none !important;
+}
+
+/* Hover: mostrar un borde sutil para que el usuario sepa que puede interactuar */
+body.fields-hidden .field-rect:hover {
+    background-color: rgba(0, 113, 227, 0.08) !important;
+    border-color: rgba(0, 113, 227, 0.4) !important;
+}
+
+/* ==========================================
+   BOTÓN TOGGLE DE CAMPOS (FAB flotante, siempre visible)
+   ========================================== */
+
+.fields-toggle-fab {
+    display: none;
+    position: fixed;
+    top: 65px;
+    right: 15px;
+    z-index: 1010;
+    padding: 8px 14px;
+    border: 1.5px solid #0071e3;
+    background: #ffffff;
+    color: #0071e3;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: top 0.25s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    white-space: nowrap;
+}
+
+.fields-toggle-fab:hover {
+    background: #f0f7ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,113,227,0.2);
+}
+
+.fields-toggle-fab.active {
+    border-color: #28a745;
+    color: #28a745;
+    background: #f0fff4;
+}
+
+.fields-toggle-fab.active:hover {
+    background: #e6ffed;
+}
+
+/* Cuando el menú hamburguesa está abierto, el botón baja */
+body.hamburger-open .fields-toggle-fab {
+    top: 385px;
+}
+
+/* Mostrar solo en modo editor */
+body.editing-mode .fields-toggle-fab {
+    display: block;
+}
+
+/* Modo oscuro */
+body.dark-mode .fields-toggle-fab {
+    background: #2c2c2e;
+    color: #ffffff;
+    border-color: #0071e3;
+}
+body.dark-mode .fields-toggle-fab:hover {
+    background: #3a3a3c;
+}
+body.dark-mode .fields-toggle-fab.active {
+    border-color: #28a745;
+    color: #28a745;
+    background: #1a2e1f;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .fields-toggle-fab {
+        top: 60px;
+        right: 12px;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+    body.hamburger-open .fields-toggle-fab {
+        top: 360px;
+    }
+}

@@ -24,3 +24,7 @@ api/
 server.js
 package.json
 package-lock.json
+
+vercel.dev.json
+dev.ps1
+.vercel
