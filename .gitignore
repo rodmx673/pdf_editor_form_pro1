@@ -28,3 +28,4 @@ package-lock.json
 vercel.dev.json
 dev.ps1
 .vercel
+google_docs/*.json
