@@ -51,8 +51,12 @@
         background: rgba(150, 150, 150, 0.15) !important; /* Casi transparente */
     }
 </style>
-<script src="escudo_guardado.js"></script>
-<script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.8/dist/lottie-player.js"></script>
+
+
+<style id="ocultar-tab-header">
+    #headerPeekTab { display: none !important; }
+    body.header-hidden #headerPeekTab { display: flex !important; }
+</style>
 </head>
 <body>
 
@@ -108,6 +112,7 @@
     <!-- Barra de acciones horizontal -->
     <div id="headerActions" class="header-actions">
         <button id="fillModeBtn" class="header-action-btn" title="Cambia entre modo Edición y Llenado">✍️ Modo Llenado</button>
+        <button id="drawModeBtn" class="header-action-btn" title="Dibujar un recuadro nuevo" style="display: none;">✏️ Lápiz</button>
         <button id="saveBtn" class="header-action-btn header-action-primary" title="Guarda todos los cambios. Sin esto, tus ediciones no aparecerán en el PDF descargado.">💾 Guardar<span id="unsavedBadge" class="unsaved-badge"></span></button>
         <a id="downloadBtn" class="header-action-btn header-action-success" style="display: none;" title="Descarga el PDF con tus cambios.">⬇ Descargar Editable</a>
         <button id="downloadSealedBtn" class="header-action-btn header-action-sealed" style="display: none;" title="Descarga el PDF como imagen (no editable)">🔒 Descargar Sellado</button>
@@ -191,8 +196,8 @@
     </div>
 </div>
 
-<script src="escudo_descarga_v2.js"></script>
-<script src="script.js"></script>
+
+`n<script src="script.js"></script>
 <div id="toastContainer" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; display: flex; flex-direction: column; gap: 10px; align-items: center;"></div>
 
 <!-- MODAL DE PRECIOS -->
@@ -250,7 +255,10 @@
 `n<script src="undo_autosave.js"></script>`n<script src="pagos.js"></script>`n`n
 </div>
 
-`n`n<div id="contenedor-animacion"></div>`n`n`n`n`n`n`n`n`n`n`n`n`n`n<script src="confirmar_pago.js"></script>`n<script src="guardar_sesion_pago.js"></script>`n<script src="recargar_pdf_pago.js"></script>`n`n`n
+`n`n<div id="contenedor-animacion"></div>
+
+
+`n`n`n`n`n`n`n
 <div id="lottieContainer" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.97);z-index:99999;flex-direction:column;align-items:center;justify-content:center;">
     <lottie-player 
         id="waitingAnimation" 
@@ -264,8 +272,30 @@
     <p style="color:#ff6b00;font-weight:bold;font-size:22px;margin-top:30px;font-family:Arial,sans-serif;">⏳ Procesando documento con IA...</p>
     <p style="color:#666;font-size:14px;margin-top:10px;font-family:Arial,sans-serif;">Esto puede tomar 10-20 segundos</p>
 </div>
-</body>
+<div id="lottieContainer" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:99999; flex-direction:column; align-items:center; justify-content:center;">
+    <lottie-player id="waitingAnimation" src="animacion.json" background="transparent" speed="1" style="width:400px; height:400px; margin:0 auto;" loop autoplay></lottie-player>
+    <p style="color:#ff6b00; font-weight:bold; font-size:22px; margin-top:20px; font-family:Arial, sans-serif;">⏳ Procesando documento con IA...</p>
+    <p style="color:#666; font-size:14px; margin-top:10px; font-family:Arial, sans-serif;">Esto puede tomar 10-20 segundos</p>
+</div>
+`n`n`n`n`n<script src="recargar_pdf_pago.js"></script>`n</body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

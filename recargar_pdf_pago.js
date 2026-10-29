@@ -1,42 +1,43 @@
 document.addEventListener('DOMContentLoaded', function() {
     var urlParams = new URLSearchParams(window.location.search);
-    
     if (urlParams.get('pago') === 'exitoso') {
-        // 1. Activar Premium
         localStorage.setItem('usuario_premium', 'true');
         
-        // 2. Leer el ID del PDF que guardamos antes de ir a pagar
         var idPendiente = localStorage.getItem('pdf_pendiente_id');
+        var planGuardado = localStorage.getItem('plan_comprado') || 'pro';
+        var monto = planGuardado === 'basico' ? '1.99' : '4.99';
         
-        // 3. Mostrar mensaje de bienvenida
-        var toast = document.getElementById('toastContainer');
-        if (toast) {
-            var msg = document.createElement('div');
-            msg.style.cssText = 'background: #28a745; color: white; padding: 15px 25px; border-radius: 8px; font-weight: bold; font-size: 16px; z-index: 99999;';
-            msg.innerHTML = '🎉 ¡Pago exitoso! Restaurando tu documento...';
-            toast.appendChild(msg);
-        }
+        // 1. Registrar el pago en Google Sheets (a través de Vercel)
+        fetch('/api/log-pago', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tipo: 'pago',
+                datos: {
+                    email: 'usuario@ejemplo.com', 
+                    plan: planGuardado,
+                    monto: monto,
+                    moneda: 'USD',
+                    pasarela: 'PayPal',
+                    estado: 'Completado',
+                    sessionId: idPendiente || 'N/A',
+                    detalles: 'Pago desde la web'
+                }
+            })
+        }).then(() => console.log('✅ Log de pago enviado a Google Sheets'))
+          .catch(err => console.error('Error al registrar log:', err));
 
-        // 4. Si tenemos un ID pendiente, intentar restaurar la vista
+        // 2. Restaurar la sesión del PDF
         if (idPendiente) {
-            console.log("🔄 Restaurando sesión del PDF: " + idPendiente);
+            if (document.getElementById('uploadView')) document.getElementById('uploadView').style.display = 'none';
+            if (document.getElementById('editorView')) document.getElementById('editorView').style.display = 'flex';
             
-            // Ocultamos la vista de subida y mostramos el editor
-            var uploadView = document.getElementById('uploadView');
-            var editorView = document.getElementById('editorView');
-            
-            if (uploadView) uploadView.style.display = 'none';
-            if (editorView) editorView.style.display = 'block';
-            
-            // Opcional: Si tu script.js tiene una función para cargar un PDF por ID, la llamamos
-            // if (typeof cargarPdfPorId === 'function') {
-            //     cargarPdfPorId(idPendiente);
-            // }
-        } else {
-            console.log("⚠️ No se encontró un PDF pendiente. El usuario deberá subirlo de nuevo (pero ya es Premium).");
+            if (typeof window.cargarSesionPorId === 'function') {
+                window.cargarSesionPorId(idPendiente);
+            } else {
+                console.log("⚠️ Función cargarSesionPorId no encontrada.");
+            }
         }
-
-        // 5. Limpiar la URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 });
