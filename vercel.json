@@ -5,10 +5,6 @@
       "destination": "/api/crear-sesion-pago"
     },
     {
-      "source": "/api/(.*)",
-      "destination": "https://pdf.teclingoingles.com/api/$1"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

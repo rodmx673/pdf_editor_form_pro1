@@ -1,5 +1,6 @@
 try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
+const PYTHON_API = window.location.hostname === 'localhost' ? '' : 'https://pdf.teclingoingles.com';
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
 let hasFieldEdits = false;
 let originalFieldBackup = null;
@@ -134,7 +135,7 @@ async function analizarYProcesar() {
 if (!selectedFile) return;
 const formData = new FormData(); formData.append('file', selectedFile);
 try {
-const resAnalyze = await fetch(API_URL + '/api/analyze', { method: 'POST', body: formData });
+const resAnalyze = await fetch(PYTHON_API + '/api/analyze', { method: 'POST', body: formData });
 if (!resAnalyze.ok) throw new Error('Error al analizar el PDF');
 const dataAnalyze = await resAnalyze.json();
     let continuar = true;
@@ -150,7 +151,7 @@ const dataAnalyze = await resAnalyze.json();
          return;
      }
      uploadArea.querySelector('p').textContent = '⏳ Procesando documento con IA...';
-     const resProcess = await fetch(API_URL + '/api/process/' + dataAnalyze.session_id, { method: 'POST' });
+     const resProcess = await fetch(PYTHON_API + '/api/process/' + dataAnalyze.session_id, { method: 'POST' });
      if (!resProcess.ok) throw new Error('Error al procesar el PDF');
      const dataProcess = await resProcess.json();
      currentSession = dataProcess.session_id;
@@ -482,7 +483,7 @@ clearTimeout(saveTimeout);
 saveTimeout = setTimeout(async () => {
 if (!currentSession) return;
 const updates = currentFields.map(f => ({ name: f.name, rect: f.rect, page: f.page, max_len: f.max_len || 0, font_size: f.font_size || 10, align: f.align || 'left', type_input: f.type_input || 'text', value: f.value || '', checked: f.checked || false, font_manual: f.font_manual || false }));
-try { await fetch(API_URL + '/api/session/' + currentSession + '/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ updates }) }); } catch (e) { console.error('Error autosave', e); }
+try { await fetch(PYTHON_API + '/api/session/' + currentSession + '/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ updates }) }); } catch (e) { console.error('Error autosave', e); }
 }, 1500);
 }
 function checkUnsavedBeforeDownload() {
@@ -499,7 +500,7 @@ async function performSave() {
 if (!currentSession) return false;
 const updates = currentFields.map(f => ({ name: f.name, rect: f.rect, page: f.page, max_len: f.max_len || 0, font_size: f.font_size || 10, align: f.align || 'left', type_input: f.type_input || 'text', value: f.value || '', checked: f.checked || false, font_manual: f.font_manual || false }));
 try {
-const res = await fetch(API_URL + '/api/session/' + currentSession + '/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ updates }) });
+const res = await fetch(PYTHON_API + '/api/session/' + currentSession + '/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ updates }) });
 if (!res.ok) throw new Error();
 currentFields.forEach(f => f.is_edited = false);
 hasFieldEdits = false;
@@ -513,7 +514,7 @@ dlBtn.onclick = (e) => {
 e.preventDefault();
 if (!checkUnsavedBeforeDownload()) return;
 if (validateBeforeDownload(e) !== false) {
-forceDownload(API_URL + '/api/session/' + currentSession + '/download', 'formulario_lleno.pdf');
+forceDownload(PYTHON_API + '/api/session/' + currentSession + '/download', 'formulario_lleno.pdf');
 }
 };
 }
@@ -524,7 +525,7 @@ forceDownload(API_URL + '/api/session/' + currentSession + '/download', 'formula
             e.preventDefault();
             if (!checkUnsavedBeforeDownload()) return;
             if (validateBeforeDownload(e) !== false) {
-                forceDownload(API_URL + '/api/session/' + currentSession + '/download?sealed=true', 'formulario_sellado.pdf');
+                forceDownload(PYTHON_API + '/api/session/' + currentSession + '/download?sealed=true', 'formulario_sellado.pdf');
             }
         };
     }
@@ -1223,6 +1224,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 });
+
 
 
 
