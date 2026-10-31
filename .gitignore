@@ -29,3 +29,7 @@ vercel.dev.json
 dev.ps1
 .vercel
 google_docs/*.json
+
+temp_formularios/
+.venv/
+__pycache__/

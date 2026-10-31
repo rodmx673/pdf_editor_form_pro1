@@ -1197,8 +1197,8 @@ body.header-pinned .pdf-container {
 }
 
 /* Cuando el body tiene la clase header-hidden, la pestaña aparece */
-body.header-hidden .header-peek-tab,
-body.header-unpinned .header-peek-tab {
+body.header-hidden.editing-mode .header-peek-tab,
+body.header-unpinned.editing-mode .header-peek-tab {
     display: flex;
     transform: translateX(-50%) translateY(0);
     opacity: 1;
@@ -1617,3 +1617,4 @@ body.dark-mode .btn-tour-cancel {
 body.dark-mode .btn-tour-cancel:hover {
     background: #3a3a3c;
 }
+

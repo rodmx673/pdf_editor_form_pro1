@@ -156,7 +156,7 @@ const dataAnalyze = await resAnalyze.json();
      const dataProcess = await resProcess.json();
      currentSession = dataProcess.session_id;
      currentFields = dataProcess.fields.map(f => ({...f, type: f.type || 'text', font_size: f.font_size || 10, align: f.align || 'left', is_edited: false, font_manual: false}));
-     pdfDoc = await pdfjsLib.getDocument(API_URL + dataProcess.pdf_url).promise;
+     pdfDoc = await pdfjsLib.getDocument(PYTHON_API + dataProcess.pdf_url).promise;
      uploadView.style.display = 'none';
      document.body.classList.add('editing-mode');
      editorView.style.display = 'flex';
@@ -1106,36 +1106,10 @@ window.cargarSesionPorId = async function(sessionId) {
     try {
         console.log("🔄 Restaurando sesión completa para:", sessionId);
         
-        // 🧹 LIMPIAR CAMPOS EXISTENTES
-        document.querySelectorAll('.field-rect').forEach(el => el.remove());
-        document.querySelectorAll('.field-rect.locked').forEach(el => el.remove());
-        document.querySelectorAll('.paywall-overlay').forEach(el => el.remove());
+        // 🧹 LIMPIAR CAMPOS EXISTENTES (Solo una vez)
+        document.querySelectorAll('.field-rect, .field-rect.locked, .paywall-overlay').forEach(el => el.remove());
         
         // ⚡ MARCAR COMO PREMIUM
-        if (localStorage.getItem('usuario_premium') === 'true') {
-            sessionIsPaid = true;
-        }
-        
-        // 🚫 NO DIBUJAR CAMPOS (evita doble capa)
-        // El PDF ya tiene los datos quemados por el servidor.
-        currentFields = [];
-        
-        // 🧹 LIMPIAR CUALQUIER CAMPO EXISTENTE ANTES DE RESTAURAR
-        document.querySelectorAll('.field-rect').forEach(el => el.remove());
-        document.querySelectorAll('.field-rect.locked').forEach(el => el.remove());
-        document.querySelectorAll('.paywall-overlay').forEach(el => el.remove());
-        
-        // ⚡ VERIFICAR SI YA PAGÓ Y ACTUALIZAR EL ESTADO GLOBAL
-        if (localStorage.getItem('usuario_premium') === 'true') {
-            sessionIsPaid = true;
-            console.log("✅ Usuario Premium detectado. Desbloqueando campos.");
-        }
-        
-        // 🧹 LIMPIAR CAMPOS DUPLICADOS ANTES DE RESTAURAR
-        document.querySelectorAll('.field-rect').forEach(el => el.remove());
-        document.querySelectorAll('.field-rect.locked').forEach(el => el.remove());
-        
-        // ⚡ VERIFICAR SI YA PAGÓ Y ACTUALIZAR EL ESTADO GLOBAL
         if (localStorage.getItem('usuario_premium') === 'true') {
             sessionIsPaid = true;
             console.log("✅ Usuario Premium detectado. Desbloqueando campos.");
@@ -1151,8 +1125,8 @@ window.cargarSesionPorId = async function(sessionId) {
             console.warn("⚠️ No se encontraron campos guardados.");
         }
         
-        // 2. Cargar el PDF
-        pdfDoc = await pdfjsLib.getDocument(API_URL + '/api/session/' + sessionId + '/pdf').promise;
+        // 2. Cargar el PDF usando PYTHON_API (Crucial para producción)
+        pdfDoc = await pdfjsLib.getDocument(PYTHON_API + '/api/session/' + sessionId + '/pdf').promise;
         currentSession = sessionId;
         
         // 3. Ocultar upload, mostrar editor
@@ -1180,15 +1154,6 @@ window.cargarSesionPorId = async function(sessionId) {
         editorView.style.display = 'none';
     }
 };
-
-
-
-
-
-
-
-
-
 // ═══════════════════════════════════════════════════════
 // HERRAMIENTA LÁPIZ (Dibujar recuadros nuevos)
 // ═══════════════════════════════════════════════════════
@@ -1224,6 +1189,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 });
+
+
 
 
 
