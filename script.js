@@ -1005,7 +1005,7 @@ if (mode === 'fill') {
              { element: '#toggleFieldsBtn', popover: { title: '👁️ Mostrar/Ocultar recuadros', description: 'Si los recuadros azules no te dejan ver las líneas del documento original, usa este botón para volverlos transparentes.', side: 'left', align: 'center' } },
              { element: '#headerActions', popover: { title: ' Acciones rápidas', description: 'Aquí están todas las acciones: Guardar, Descargar, Modo Edición, Tutorial y más.', side: 'bottom', align: 'center' } },
              { element: '#saveBtn', popover: { title: '💾 Guardar (IMPORTANTE)', description: 'Antes de descargar, SIEMPRE presiona Guardar. Sin esto, tus datos no aparecerán en el PDF final.', side: 'bottom', align: 'center' } },
-             { element: '#downloadBtn', popover: { title: '⬇ Descargar', description: 'Descarga tu PDF con los datos llenos. Puedes elegir Editable o Sellado.', side: 'bottom', align: 'center' } }
+
          ]
      });
  } else {
@@ -1021,7 +1021,7 @@ if (mode === 'fill') {
              { element: '.pdf-page .field-rect', popover: { title: '➕ Editar o crear campo', description: 'Haz clic en el botón + de cada campo para ajustar su tipo, tamaño de fuente, alineación o celdas.', side: 'bottom', align: 'center' } },
              { element: '#headerActions', popover: { title: '⚡ Acciones rápidas', description: 'Aquí están todas las acciones: Guardar, Descargar, Modo Llenado, Tutorial y más.', side: 'bottom', align: 'center' } },
              { element: '#saveBtn', popover: { title: '💾 Guardar (CRÍTICO)', description: 'Cada vez que edites un campo, presiona Guardar. Si no lo haces, tus cambios NO se aplicarán al PDF descargado.', side: 'bottom', align: 'center' } },
-             { element: '#downloadBtn', popover: { title: '⬇ Descargar', description: 'Una vez guardado, descarga el PDF con los campos nuevos.', side: 'bottom', align: 'center' } }
+
          ]
      });
  }
