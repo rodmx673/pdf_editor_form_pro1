@@ -1,6 +1,6 @@
 try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
-const PYTHON_API = window.location.hostname === 'localhost' ? '' : 'https://pdf.teclingoingles.com';
+const PYTHON_API = ''; // Vercel y Node se encargan de redirigir
 const uploadArea = document.getElementById('uploadArea'), fileInput = document.getElementById('fileInput'), uploadView = document.getElementById('uploadView'), editorView = document.getElementById('editorView'), pdfPages = document.getElementById('pdfPages'), floatingToolbar = document.getElementById('floatingToolbar'), headerElement = document.getElementById('mainHeader');
 let hasFieldEdits = false;
 let originalFieldBackup = null;
@@ -451,6 +451,7 @@ if (missing > 0) {
  return true;
 }
 async function forceDownload(url, filename) {
+    if (!sessionIsPaid) { showPaywallModal(); return; }
 if (hasFieldEdits) {
 const proceed = confirm('⚠️ TIENES CAMBIOS SIN GUARDAR\n\nSi descargas ahora, tus ediciones recientes NO aparecerán en el PDF.\n\n¿Quieres descargar de todos modos?');
 if (!proceed) {
@@ -512,7 +513,8 @@ dlBtn.href = '#';
 dlBtn.style.display = 'block';
 dlBtn.onclick = (e) => {
 e.preventDefault();
-if (!checkUnsavedBeforeDownload()) return;
+if (!sessionIsPaid) { showPaywallModal(); return; }
+            if (!checkUnsavedBeforeDownload()) return;
 if (validateBeforeDownload(e) !== false) {
 forceDownload(PYTHON_API + '/api/session/' + currentSession + '/download', 'formulario_lleno.pdf');
 }
@@ -523,6 +525,7 @@ forceDownload(PYTHON_API + '/api/session/' + currentSession + '/download', 'form
         sealedBtn.style.display = 'block';
         sealedBtn.onclick = (e) => {
             e.preventDefault();
+            if (!sessionIsPaid) { showPaywallModal(); return; }
             if (!checkUnsavedBeforeDownload()) return;
             if (validateBeforeDownload(e) !== false) {
                 forceDownload(PYTHON_API + '/api/session/' + currentSession + '/download?sealed=true', 'formulario_sellado.pdf');
@@ -1189,6 +1192,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 });
+
+
 
 
 

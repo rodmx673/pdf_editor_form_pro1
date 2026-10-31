@@ -1,12 +1,10 @@
 {
   "rewrites": [
-    {
-      "source": "/api/crear-sesion-pago",
-      "destination": "/api/crear-sesion-pago"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/crear-sesion-pago", "destination": "/api/crear-sesion-pago" },
+    { "source": "/api/log-pago", "destination": "/api/log-pago" },
+    { "source": "/api/analyze", "destination": "https://pdf.teclingoingles.com/api/analyze" },
+    { "source": "/api/process/:path*", "destination": "https://pdf.teclingoingles.com/api/process/:path*" },
+    { "source": "/api/session/:path*", "destination": "https://pdf.teclingoingles.com/api/session/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
