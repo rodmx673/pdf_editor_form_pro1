@@ -93,15 +93,7 @@ headerElement.classList.add('header-hidden');
 document.body.classList.add('header-hidden');
 }, 3500);
 }
-document.getElementById('toggleHeaderBtn')?.addEventListener('click', () => {
-if (headerElement.classList.contains('header-hidden')) {
-headerElement.classList.remove('header-hidden');
-document.body.classList.remove('header-hidden');
-} else {
-headerElement.classList.add('header-hidden');
-document.body.classList.add('header-hidden');
-}
-});
+
 const themeToggle = document.getElementById('themeToggle');
 let currentTheme = localStorage.getItem('theme') || 'light';
 function applyTheme(theme) {
@@ -155,6 +147,7 @@ const dataAnalyze = await resAnalyze.json();
      if (!resProcess.ok) throw new Error('Error al procesar el PDF');
      const dataProcess = await resProcess.json();
      currentSession = dataProcess.session_id;
+     sessionIsPaid = Boolean(dataProcess.paid);
      currentFields = dataProcess.fields.map(f => ({...f, type: f.type || 'text', font_size: f.font_size || 10, align: f.align || 'left', is_edited: false, font_manual: false}));
      pdfDoc = await pdfjsLib.getDocument(PYTHON_API + dataProcess.pdf_url).promise;
      uploadView.style.display = 'none';
@@ -462,6 +455,11 @@ return;
 try {
 showToast('⏳ Preparando descarga...', 'medium');
 const response = await fetch(url);
+if (response.status === 402) {
+    sessionIsPaid = false;
+    showPaywallModal();
+    return;
+}
 if (!response.ok) throw new Error('Error en la respuesta del servidor');
     const blob = await response.blob();
     const blobUrl = window.URL.createObjectURL(blob);
@@ -553,9 +551,7 @@ btn.style.color = isFillMode ? '#28a745' : '#0071e3';
 clearSelection();
 renderPdf();
 });
-document.getElementById('resetBtn')?.addEventListener('click', () => {
-if (confirm('¿Reiniciar? Perderás los cambios.')) window.location.reload();
-});
+
 function selectField(fieldName) {
 if (hasFieldEdits && selectedFieldName !== fieldName) {
 triggerShake();
@@ -1084,7 +1080,13 @@ overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-in
 overlay.innerHTML = '<div style="background:#fff;border-radius:20px;padding:40px;max-width:500px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.4);"><div style="font-size:64px;margin-bottom:20px;"></div><h2 style="margin:0 0 10px 0;color:#1d1d1f;font-size:24px;">Has alcanzado el límite de prueba</h2><p style="color:#666;font-size:15px;margin-bottom:25px;line-height:1.6;">Has completado el 30% de los campos. Para desbloquear el resto del documento y descargarlo, adquiere uno de nuestros planes.</p><div style="display:flex;gap:12px;margin-bottom:20px;"><button onclick="purchasePlan(\'basico\')" style="flex:1;padding:14px;background:#ff6b00;color:white;border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;">Plan Básico<br><span style="font-size:20px;">$1.99</span></button><button onclick="purchasePlan(\'pro\')" style="flex:1;padding:14px;background:#0071e3;color:white;border:none;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;">Plan Pro<br><span style="font-size:20px;">$4.99</span></button></div><button onclick="document.getElementById(\'paywallOverlay\').remove();paywallShown=false;" style="background:none;border:none;color:#999;font-size:13px;cursor:pointer;text-decoration:underline;">Seguir explorando (sin editar)</button></div>';
 document.body.appendChild(overlay);
 }
-function purchasePlan(plan) { alert('🚧 El sistema de pago con PayPal estará disponible pronto.\n\nPlan seleccionado: ' + plan.toUpperCase()); }
+function purchasePlan(plan) {
+    if (typeof window.iniciarPago === 'function') {
+        window.iniciarPago(plan);
+    } else {
+        alert('El sistema de pago aún no está disponible.');
+    }
+}
 window._paywallStatus = function() {
 const total = currentFields.length;
 const filled = currentFields.filter(function(f) {
@@ -1111,11 +1113,20 @@ window.cargarSesionPorId = async function(sessionId) {
         
         // 🧹 LIMPIAR CAMPOS EXISTENTES (Solo una vez)
         document.querySelectorAll('.field-rect, .field-rect.locked, .paywall-overlay').forEach(el => el.remove());
+        sessionIsPaid = false;
         
-        // ⚡ MARCAR COMO PREMIUM
-        if (localStorage.getItem('usuario_premium') === 'true') {
-            sessionIsPaid = true;
-            console.log("✅ Usuario Premium detectado. Desbloqueando campos.");
+        try {
+            const statusRes = await fetch(PYTHON_API + '/api/session/' + sessionId + '/status');
+            if (statusRes.ok) {
+                const status = await statusRes.json();
+                sessionIsPaid = Boolean(status.paid);
+            } else if (localStorage.getItem('usuario_premium') === 'true') {
+                sessionIsPaid = true;
+            }
+        } catch (e) {
+            if (localStorage.getItem('usuario_premium') === 'true') {
+                sessionIsPaid = true;
+            }
         }
         
         // 1. Recuperar los campos guardados del localStorage
@@ -1148,6 +1159,9 @@ window.cargarSesionPorId = async function(sessionId) {
         // 5. Renderizar el PDF con los campos recuperados
         await renderPdf();
         updateStepper(3);
+        if (sessionIsPaid) {
+            await performSave();
+        }
         showToast("✅ Documento restaurado. Puedes continuar editando.", "optimal");
         
     } catch (error) {
