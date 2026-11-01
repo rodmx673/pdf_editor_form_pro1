@@ -511,20 +511,34 @@ currentFields.forEach(f => f.is_edited = false);
 hasFieldEdits = false;
 updateUnsavedBadge();
 document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('edited-field'));
-const dlBtn = document.getElementById('downloadBtn');
-if (dlBtn) {
-dlBtn.href = '#';
-dlBtn.style.display = 'block';
-dlBtn.onclick = (e) => {
-e.preventDefault();
-if (!sessionIsPaid) { showPaywallModal(); return; }
-            if (!checkUnsavedBeforeDownload()) return;
-if (validateBeforeDownload(e) !== false) {
-forceDownload(PYTHON_API + '/api/session/' + currentSession + '/download', 'formulario_lleno.pdf');
-}
-};
-}
-    const sealedBtn = document.getElementById('downloadSealedBtn');
+            const dlBtn = document.getElementById('downloadBtn');
+            if (dlBtn) {
+                dlBtn.style.display = 'block'; // Siempre visible
+                dlBtn.onclick = (e) => {
+                    e.preventDefault();
+                    
+                    // 1. Si no ha pagado NADA, mostrar pasarela general
+                    if (!sessionIsPaid) { 
+                        showPaywallModal(); 
+                        return; 
+                    }
+                    
+                    // 2. Si pagó Básico, mostrar alerta para que compre Pro
+                    if (sessionPlan !== 'pro') {
+                        alert('🔒 El botón "Descargar Editable" solo está disponible en el Plan Pro (.99).\n\nHas adquirido el Plan Básico. Si quieres descargar el documento para llenarlo localmente, te invitamos a adquirir el Plan Pro.');
+                        showPaywallModal(); // Abre el modal de precios por si quieren subir de plan
+                        return;
+                    }
+                    
+                    // 3. Si tiene Plan Pro, descargar normalmente
+                    if (!checkUnsavedBeforeDownload()) return;
+                    if (validateBeforeDownload(e) !== false) {
+                        forceDownload(PYTHON_API + '/api/session/' + currentSession + '/download', 'formulario_lleno.pdf');
+                    }
+                };
+            }
+            
+            const sealedBtn = document.getElementById('downloadSealedBtn');
     if (sealedBtn) {
         sealedBtn.style.display = 'block';
         sealedBtn.onclick = (e) => {
@@ -1287,6 +1301,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('langToggle')?.addEventListener('click', () => {
     applyLanguage(currentLang === 'es' ? 'en' : 'es');
 });
+
 
 
 
