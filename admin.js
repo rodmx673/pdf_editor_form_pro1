@@ -73,10 +73,16 @@ function renderCanvas() {
 
         if (block.type === 'text') {
             el.innerHTML = `<div class="text-content" style="font-size:${block.fontSize || 24}px; font-family:${block.fontFamily || 'sans-serif'}; color:${block.color || '#ffffff'};">${block.content}</div>`;
-        } else if (block.type === 'youtube') {
-            const vid = block.url && block.url.includes('v=') ? block.url.split('v=')[1].split('&')[0] : (block.url && block.url.includes('youtu.be/') ? block.url.split('youtu.be/')[1].split('?')[0] : '');
-            el.innerHTML = vid ? `<iframe src="https://www.youtube.com/embed/${vid}" allow="autoplay"></iframe>` : 'Sin video';
-        } else if (block.type === 'banner') {
+            } else if (block.type === 'youtube') {
+        html += `<label>URL de YouTube</label><input type="text" value="\" oninput="updateProp('url', this.value)" placeholder="https://youtube.com/watch?v=...">`;
+        html += `<label>Tamaño Predefinido</label>
+        <select onchange="applyVideoRatio(this.value)">
+            <option value="free" \>Libre (Ajuste manual)</option>
+            <option value="16:9" \>Horizontal (16:9 - YouTube Normal)</option>
+            <option value="9:16" \>Vertical (9:16 - Shorts/TikTok)</option>
+            <option value="1:1" \>Cuadrado (1:1)</option>
+        </select>`;
+    } else if (block.type === 'banner') {
             el.innerHTML = block.url ? `<img src="${block.url}">` : 'Sin imagen';
         }
 
@@ -141,6 +147,36 @@ function setupDragAndDrop(el, resizeHandle, block) {
     document.addEventListener('touchend', handleEnd);
 }
 
+function applyVideoRatio(ratioStr) {
+    const block = config.landing.find(b => b.id === selectedId);
+    if (!block) return;
+    block.ratio = ratioStr === 'free' ? null : ratioStr;
+
+    if (ratioStr !== 'free') {
+        const parts = ratioStr.split(':');
+        const rw = parseFloat(parts[0]);
+        const rh = parseFloat(parts[1]);
+        
+        // Ancho base según si es horizontal o vertical
+        let w = 40;
+        if (rh > rw) w = 25; // Si es vertical, un poco más angosto
+
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const aspect = rw / rh;
+        
+        const px_w = (w / 100) * vw;
+        const px_h = px_w / aspect;
+        const h = (px_h / vh) * 100;
+
+        block.w = w;
+        block.h = h;
+        block.x = (100 - w) / 2;
+        block.y = (100 - h) / 2;
+    }
+    renderCanvas();
+}
+
 function renderProperties() {
     const panel = document.getElementById('properties-panel');
     if (!selectedId) { panel.innerHTML = '<p style="text-align: center; color: #999; font-size: 14px;">Selecciona un bloque para editar.</p>'; return; }
@@ -179,8 +215,15 @@ function renderProperties() {
                 <option value="Impact, sans-serif" ${block.fontFamily === 'Impact, sans-serif' ? 'selected' : ''}>Impact</option>
             </select>
         `;
-    } else if (block.type === 'youtube') {
-        html += `<label>URL de YouTube</label><input type="text" value="${block.url}" oninput="updateProp('url', this.value)" placeholder="https://youtube.com/watch?v=...">`;
+        } else if (block.type === 'youtube') {
+        html += `<label>URL de YouTube</label><input type="text" value="\" oninput="updateProp('url', this.value)" placeholder="https://youtube.com/watch?v=...">`;
+        html += `<label>Tamaño Predefinido</label>
+        <select onchange="applyVideoRatio(this.value)">
+            <option value="free" \>Libre (Ajuste manual)</option>
+            <option value="16:9" \>Horizontal (16:9 - YouTube Normal)</option>
+            <option value="9:16" \>Vertical (9:16 - Shorts/TikTok)</option>
+            <option value="1:1" \>Cuadrado (1:1)</option>
+        </select>`;
     } else if (block.type === 'banner') {
         html += `
             <label>Subir Imagen (desde tu PC/Cel)</label>
@@ -257,4 +300,5 @@ async function saveConfig(preview) {
         if (preview) window.location.href = 'index.html';
     } catch (e) { alert('Error: ' + e.message); }
 }
+
 
