@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const res = await fetch('/api/capturar-pago', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ order_id: orderId, session_id: sessionId })
+            body: JSON.stringify({ order_id: orderId, session_id: sessionId, plan: localStorage.getItem('plan_comprado') || 'basico' })
         });
         const data = await res.json().catch(() => ({}));
 
@@ -105,3 +105,4 @@ function mostrarAviso(mensaje, tipo) {
 function limpiarUrl() {
     window.history.replaceState({}, document.title, window.location.pathname);
 }
+

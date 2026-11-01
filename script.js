@@ -22,6 +22,7 @@ setTimeout(() => {
 }
 let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 let sessionIsPaid = false;
+let sessionPlan = 'none';
 let paywallShown = false;
 let isDraggingPopover = false, popoverStartX, popoverStartY, popoverStartLeft, popoverStartTop;
 document.addEventListener('DOMContentLoaded', () => {
@@ -150,6 +151,7 @@ const dataAnalyze = await resAnalyze.json();
      const dataProcess = await resProcess.json();
      currentSession = dataProcess.session_id;
      sessionIsPaid = Boolean(dataProcess.paid);
+    sessionPlan = dataProcess.plan || 'basico';
      currentFields = dataProcess.fields.map(f => ({...f, type: f.type || 'text', font_size: f.font_size || 10, align: f.align || 'left', is_edited: false, font_manual: false}));
      pdfDoc = await pdfjsLib.getDocument(PYTHON_API + dataProcess.pdf_url).promise;
      if (window.CustomLayer) window.CustomLayer.stop();
@@ -1124,6 +1126,7 @@ window.cargarSesionPorId = async function(sessionId) {
             if (statusRes.ok) {
                 const status = await statusRes.json();
                 sessionIsPaid = Boolean(status.paid);
+                sessionPlan = status.plan || 'basico';
             } else if (localStorage.getItem('usuario_premium') === 'true') {
                 sessionIsPaid = true;
             }
@@ -1284,5 +1287,6 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('langToggle')?.addEventListener('click', () => {
     applyLanguage(currentLang === 'es' ? 'en' : 'es');
 });
+
 
 

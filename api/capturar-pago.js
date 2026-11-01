@@ -29,7 +29,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Método no permitido' });
     }
 
-    const { order_id, session_id } = req.body || {};
+    const { order_id, session_id, plan } = req.body || {};
 
     if (typeof order_id !== 'string' || !/^[A-Z0-9]{8,40}$/i.test(order_id)) {
         return res.status(400).json({ error: 'Orden de PayPal inválida' });
@@ -92,7 +92,7 @@ export default async function handler(req, res) {
             throw new Error('El monto capturado no corresponde a un plan válido');
         }
 
-        const markRes = await fetch(pythonBase + '/api/session/' + encodeURIComponent(session_id) + '/mark-paid', {
+        const markRes = await fetch(pythonBase + '/api/session/' + encodeURIComponent(session_id) + '/mark-paid?plan=' + (plan || 'basico'), {
             method: 'POST',
             headers: { 'X-Unlock-Token': unlockToken }
         });
@@ -114,3 +114,4 @@ export default async function handler(req, res) {
         res.status(400).json({ error: error.message || 'No se pudo confirmar el pago' });
     }
 }
+
