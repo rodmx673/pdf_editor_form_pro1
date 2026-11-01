@@ -1,3 +1,20 @@
+// ==========================================
+// SISTEMA DE AUDITORÍA (AUDIT LOG)
+// ==========================================
+const VISIT_ID = localStorage.getItem('visit_id') || 'visit_' + Math.random().toString(36).substr(2, 9);
+localStorage.setItem('visit_id', VISIT_ID);
+
+function logEvent(eventName, details = {}) {
+    fetch('https://api.pdfeditforms.com/api/log-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: eventName, session_id: VISIT_ID, details: details })
+    }).catch(e => console.log('Error enviando log', e));
+}
+
+// Registrar visita inicial a la página
+logEvent('page_visit', { url: window.location.href });
+
 try { if (typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) { console.error('Error PDF.js:', e); }
 const API_URL = '';
 const PYTHON_API = 'https://api.pdfeditforms.com';
@@ -126,6 +143,7 @@ updateStepper(2);
 setTimeout(() => { analizarYProcesar(); }, 500);
 }
 async function analizarYProcesar() {
+    logEvent('pdf_uploaded', { filename: selectedFile ? selectedFile.name : 'unknown' });
     if (window.CustomLayer) window.CustomLayer.start('landing');
 if (!selectedFile) return;
 const formData = new FormData(); formData.append('file', selectedFile);
@@ -167,6 +185,7 @@ uploadView.style.display = 'none';
      }
      await renderPdf();
      updateStepper(3);
+    logEvent('process_complete', { total_fields: currentFields.length });
      if (typeof window.__maybeAutoTour === 'function') {
          window.__maybeAutoTour();
      }
@@ -427,8 +446,19 @@ if (!f.value || f.value.trim() === '') missing++;
 }
 });
 if (missing > 0) {
-     const proceed = confirm('⚠️ Hay ' + missing + ' campo(s) sin llenar.\n\nSi descargas ahora, el PDF estará incompleto.\n\n¿Deseas descargarlo de todos modos?');
-     if (!proceed) {
+         const totalFields = currentFields.length;
+    const filledFields = totalFields - missing;
+    const completeness = totalFields > 0 ? Math.round((filledFields / totalFields) * 100) : 100;
+    
+    logEvent('download_attempt', { missing_fields: missing, completeness_percentage: completeness + '%' });
+
+    const proceed = confirm('⚠️ Hay ' + missing + ' campo(s) sin llenar.\n\nSi descargas ahora, el PDF estará incompleto.\n\n¿Deseas descargarlo de todos modos?');
+    
+    if (proceed && missing > 0) {
+        logEvent('incomplete_download_accepted', { missing_fields: missing, completeness_percentage: completeness + '%' });
+    }
+    
+    if (!proceed) {
          if(e) e.preventDefault();
          document.querySelectorAll('.field-rect').forEach(el => {
              const f = currentFields.find(x => x.name === el.dataset.fieldName);
@@ -477,6 +507,7 @@ if (!response.ok) throw new Error('Error en la respuesta del servidor');
     a.click();
     window.URL.revokeObjectURL(blobUrl);
     document.body.removeChild(a);
+    logEvent('download_success', { filename: filename });
     showToast('✅ Archivo descargado con éxito', 'optimal');
 } catch (error) {
     console.error('Error de descarga:', error);
@@ -1181,6 +1212,7 @@ uploadView.style.display = 'none';
         // 5. Renderizar el PDF con los campos recuperados
         await renderPdf();
         updateStepper(3);
+    logEvent('process_complete', { total_fields: currentFields.length });
         if (sessionIsPaid) {
             await performSave();
         }
@@ -1301,6 +1333,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('langToggle')?.addEventListener('click', () => {
     applyLanguage(currentLang === 'es' ? 'en' : 'es');
 });
+
 
 
 
