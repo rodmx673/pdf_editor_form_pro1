@@ -131,7 +131,7 @@ function setupDragAndDrop(el, resizeHandle, block) {
         if(e.cancelable) e.preventDefault();
     };
 
-    const handleEnd = () => { isDragging = false; isResizing = false; renderProperties(); };
+    const handleEnd = () => { if (isDragging || isResizing) { isDragging = false; isResizing = false; renderProperties(); } };
 
     el.addEventListener('mousedown', handleStart);
     el.addEventListener('touchstart', handleStart, {passive: false});
@@ -257,3 +257,4 @@ async function saveConfig(preview) {
         if (preview) window.location.href = 'index.html';
     } catch (e) { alert('Error: ' + e.message); }
 }
+
