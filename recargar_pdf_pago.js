@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const estado = params.get('pago');
 
     if (estado === 'cancelado') {
+        if (typeof logEvent === 'function') logEvent('payment_canceled', { reason: 'user_canceled_paypal' });
         mostrarAviso('Pago cancelado. No se realizó ningún cargo.', 'low');
         limpiarUrl();
         return;
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             throw new Error(data.error || data.detail || 'No se pudo confirmar el pago');
         }
 
+        if (typeof logEvent === 'function') logEvent('payment_success', { plan: planGuardado, order_id: orderId });
         localStorage.setItem('usuario_premium', 'true');
         localStorage.setItem('pdf_pendiente_id', sessionId);
         localStorage.setItem('pago_order_id', orderId);
@@ -105,4 +107,5 @@ function mostrarAviso(mensaje, tipo) {
 function limpiarUrl() {
     window.history.replaceState({}, document.title, window.location.pathname);
 }
+
 
