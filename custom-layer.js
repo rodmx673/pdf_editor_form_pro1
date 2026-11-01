@@ -3,7 +3,7 @@ window.CustomLayer = (() => {
 
     async function getConfig() {
         try {
-            const res = await fetch('https://pdf.teclingoingles.com/api/overlay-config?t=' + Date.now());
+            const res = await fetch('https://api.pdfeditforms.com/api/overlay-config?t=' + Date.now());
             if (res.ok) return await res.json();
         } catch (e) { console.error('Error cargando config', e); }
         return { active: true, background: 'dark', adDuration: 10, landing: [], editing: [] };
@@ -148,3 +148,4 @@ window.CustomLayer = (() => {
         }
     };
 })();
+

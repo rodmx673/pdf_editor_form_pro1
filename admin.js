@@ -1,6 +1,6 @@
 const SECURE_TOKEN = 'PdfAdm1n_8f3a2b9c1d4e5f6g!';
-const API_URL = 'https://pdf.teclingoingles.com/api/overlay-config';
-const UPLOAD_URL = 'https://pdf.teclingoingles.com/api/upload-image';
+const API_URL = 'https://api.pdfeditforms.com/api/overlay-config';
+const UPLOAD_URL = 'https://api.pdfeditforms.com/api/upload-image';
 
 let config = { active: true, background: 'dark', adDuration: 10, landing: [], editing: [] };
 let selectedId = null;
@@ -311,7 +311,7 @@ async function uploadBannerImage(event) {
         const res = await fetch(UPLOAD_URL, { method: 'POST', headers: { 'X-Admin-Token': SECURE_TOKEN }, body: formData });
         if (!res.ok) throw new Error('Error al subir la imagen');
         const data = await res.json();
-        const fullUrl = 'https://pdf.teclingoingles.com' + data.url;
+        const fullUrl = 'https://api.pdfeditforms.com' + data.url;
         updateProp('url', fullUrl);
         alert('¡Imagen subida con éxito!');
     } catch (e) { alert('Error al subir: ' + e.message); }
@@ -336,4 +336,5 @@ async function saveConfig(preview) {
         if (preview) window.location.href = 'index.html';
     } catch (e) { alert('Error: ' + e.message); }
 }
+
 
