@@ -15,7 +15,6 @@ window.CustomLayer = (() => {
         overlay.id = 'custom-ui-overlay';
         overlay.style.cssText = "position:fixed; inset:0; z-index:99999; display:none; transition: opacity 0.4s ease; opacity: 0; pointer-events:none;";
         
-        // Contenedor de los botones de cierre (arriba derecha)
         const btnContainer = document.createElement('div');
         btnContainer.style.cssText = "position:absolute; top:20px; right:20px; display:flex; flex-direction:column; align-items:flex-end; gap:5px; pointer-events:auto; z-index:100000;";
 
@@ -23,16 +22,8 @@ window.CustomLayer = (() => {
         closeBtn.id = 'custom-close-btn';
         closeBtn.innerHTML = '🔒 Cierre en 10s...';
         closeBtn.style.cssText = "background:rgba(0,0,0,0.6); color:white; border:1px solid rgba(255,255,255,0.3); padding:10px 15px; border-radius:20px; cursor:not-allowed; font-weight:bold; transition:all 0.2s; opacity:0.7;";
-        
-        const skipBtn = document.createElement('button');
-        skipBtn.id = 'custom-skip-btn';
-        skipBtn.innerHTML = 'Saltar anuncio >';
-        skipBtn.style.cssText = "background:transparent; color:rgba(255,255,255,0.6); border:none; font-size:11px; text-decoration:underline; cursor:pointer; padding:0; margin-right:5px; display:none;";
-        
-        skipBtn.onclick = () => { localStorage.setItem('overlay_disabled', 'true'); CustomLayer.stop(); };
 
         btnContainer.appendChild(closeBtn);
-        btnContainer.appendChild(skipBtn);
         overlay.appendChild(btnContainer);
 
         container = document.createElement('div');
@@ -43,32 +34,36 @@ window.CustomLayer = (() => {
 
     function startCountdown(seconds) {
         const closeBtn = document.getElementById('custom-close-btn');
-        const skipBtn = document.getElementById('custom-skip-btn');
         let timeLeft = parseInt(seconds) || 10;
         
+        // Bloqueo total al inicio
         closeBtn.disabled = true;
         closeBtn.innerHTML = `🔒 Cierre en ${timeLeft}s...`;
         closeBtn.style.cursor = 'not-allowed';
         closeBtn.style.opacity = '0.7';
-        skipBtn.style.display = 'none';
 
         clearInterval(countdownInterval);
         countdownInterval = setInterval(() => {
             timeLeft--;
             if (timeLeft > 0) {
+                // El botón sigue bloqueado y cuenta regresivamente
                 closeBtn.innerHTML = `🔒 Cierre en ${timeLeft}s...`;
-                if (timeLeft <= 5) skipBtn.style.display = 'block'; // Mostrar "Saltar" a los 5 segundos
             } else {
+                // El tiempo se agotó: Desbloqueo total
                 clearInterval(countdownInterval);
                 closeBtn.innerHTML = '✕ Ocultar anuncios';
                 closeBtn.disabled = false;
                 closeBtn.style.cursor = 'pointer';
                 closeBtn.style.opacity = '1';
                 closeBtn.style.background = 'rgba(0,0,0,0.6)';
+                
+                // Le damos la funcionalidad de cerrar
                 closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(0,0,0,0.9)';
                 closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(0,0,0,0.6)';
-                closeBtn.onclick = () => { localStorage.setItem('overlay_disabled', 'true'); CustomLayer.stop(); };
-                skipBtn.style.display = 'none'; // Ocultar el "Saltar" porque ya puede cerrar
+                closeBtn.onclick = () => { 
+                    localStorage.setItem('overlay_disabled', 'true'); 
+                    CustomLayer.stop(); 
+                };
             }
         }, 1000);
     }
@@ -126,7 +121,7 @@ window.CustomLayer = (() => {
             }
             renderBlocks();
             
-            // Iniciar el temporizador
+            // Iniciar el temporizador estricto
             startCountdown(config.adDuration || 10);
 
             overlay.style.display = 'block';
