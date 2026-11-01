@@ -507,7 +507,7 @@ if (!response.ok) throw new Error('Error en la respuesta del servidor');
     a.click();
     window.URL.revokeObjectURL(blobUrl);
     document.body.removeChild(a);
-    logEvent('download_success', { filename: filename });
+    logEvent('download_success', { filename: filename, type: filename.includes('sellado') ? 'sellado' : 'editable' });
     showToast('✅ Archivo descargado con éxito', 'optimal');
 } catch (error) {
     console.error('Error de descarga:', error);
@@ -573,6 +573,7 @@ document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('edit
     if (sealedBtn) {
         sealedBtn.style.display = 'block';
         sealedBtn.onclick = (e) => {
+            logEvent('download_clicked', { type: 'sellado' });
             e.preventDefault();
             if (!sessionIsPaid) { showPaywallModal(); return; }
             if (!checkUnsavedBeforeDownload()) return;
@@ -1333,6 +1334,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('langToggle')?.addEventListener('click', () => {
     applyLanguage(currentLang === 'es' ? 'en' : 'es');
 });
+
 
 
 
