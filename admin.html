@@ -28,8 +28,8 @@
 <body>
     <div id="admin-login-screen" style="position:fixed; inset:0; background:#1d1d1f; z-index:999999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; font-family:sans-serif;">
         <h2 style="margin-bottom:20px;">🔒 Acceso Restringido</h2>
-        <input type="password" id="admin-pass" placeholder="Contraseña" style="padding:12px; border-radius:8px; border:none; font-size:16px; text-align:center; margin-bottom:15px; width:200px;">
-        <button onclick="checkAdminPass()" style="padding:12px 30px; border-radius:8px; border:none; background:#0071e3; color:white; font-weight:bold; cursor:pointer;">Entrar</button>
+        <input type="password" id="admin-pass" placeholder="Contraseña" style="padding:12px; border-radius:8px; border:none; font-size:16px; text-align:center; margin-bottom:15px; width:250px;">
+        <button onclick="checkAdminPass()" style="padding:12px 30px; border-radius:8px; border:none; background:#0071e3; color:white; font-weight:bold; cursor:pointer; width:250px;">Entrar</button>
     </div>
 
     <div class="sidebar">
@@ -47,10 +47,17 @@
     </div>
     <div class="canvas-area"><div class="preview-canvas" id="canvas"></div></div>
 
-        <script>
+    <script>
+        const SECURE_TOKEN = 'PdfAdm1n_8f3a2b9c1d4e5f6g!';
+        const API_URL = 'https://pdf.teclingoingles.com/api/overlay-config';
+        const UPLOAD_URL = 'https://pdf.teclingoingles.com/api/upload-image';
+
+        let config = { landing: [], editing: [] };
+        let selectedId = null;
+
         function checkAdminPass() {
             const pass = document.getElementById('admin-pass').value;
-            if (pass === 'PdfAdm1n_8f3a2b9c1d4e5f6g!') { 
+            if (pass === SECURE_TOKEN) { 
                 sessionStorage.setItem('admin_token', pass);
                 document.getElementById('admin-login-screen').style.display = 'none'; 
                 loadConfig(); 
@@ -58,13 +65,133 @@
                 alert('Contraseña incorrecta'); 
             }
         }
-        
-        // Autologin si ya se autenticó en esta sesión
-        if (sessionStorage.getItem('admin_token') === 'PdfAdm1n_8f3a2b9c1d4e5f6g!') {
+
+        // Autologin
+        if (sessionStorage.getItem('admin_token') === SECURE_TOKEN) {
             document.getElementById('admin-login-screen').style.display = 'none';
-            // loadConfig se llama automáticamente al final del script
+            setTimeout(loadConfig, 100);
+        }
+
+        async function loadConfig() {
+            try {
+                const res = await fetch(API_URL);
+                if (res.ok) config = await res.json();
+            } catch (e) { console.log('Usando configuración por defecto'); }
+            renderCanvas();
+        }
+
+        function generateId() { return Math.random().toString(36).substr(2, 9); }
+
+        function addBlock(type) {
+            const newBlock = { id: generateId(), type: type, x: 100, y: 100, w: 300, h: 150, content: type === 'text' ? 'Texto de ejemplo' : '', url: '' };
+            config.landing.push(newBlock);
+            selectedId = newBlock.id;
+            renderCanvas();
+        }
+
+        function renderCanvas() {
+            const canvas = document.getElementById('canvas');
+            canvas.innerHTML = '';
+            config.landing.forEach(block => {
+                const el = document.createElement('div');
+                el.className = 'draggable-block' + (selectedId === block.id ? ' selected' : '');
+                el.style.left = block.x + 'px'; el.style.top = block.y + 'px';
+                el.style.width = block.w + 'px'; el.style.height = block.h + 'px';
+                el.id = 'block-' + block.id;
+
+                if (block.type === 'text') el.innerHTML = `<div class="text-content">${block.content}</div>`;
+                else if (block.type === 'youtube') {
+                    const vid = block.url && block.url.includes('v=') ? block.url.split('v=')[1].split('&')[0] : '';
+                    el.innerHTML = vid ? `<iframe src="https://www.youtube.com/embed/${vid}" allow="autoplay"></iframe>` : 'Sin video';
+                } else if (block.type === 'banner') {
+                    el.innerHTML = block.url ? `<img src="${block.url}">` : 'Sin imagen';
+                }
+
+                const resizeHandle = document.createElement('div');
+                resizeHandle.className = 'resize-handle';
+                el.appendChild(resizeHandle);
+                setupDragAndDrop(el, resizeHandle, block);
+                el.addEventListener('mousedown', (e) => { if(e.target !== resizeHandle && selectedId !== block.id) { selectedId = block.id; renderCanvas(); } });
+                canvas.appendChild(el);
+            });
+            renderProperties();
+        }
+
+        function setupDragAndDrop(el, resizeHandle, block) {
+            let isDragging = false, isResizing = false, startX, startY, startLeft, startTop, startW, startH;
+            el.addEventListener('mousedown', (e) => {
+                if (e.target === resizeHandle) isResizing = true; else isDragging = true;
+                startX = e.clientX; startY = e.clientY; startLeft = block.x; startTop = block.y; startW = block.w; startH = block.h;
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) { block.x = startLeft + (e.clientX - startX); block.y = startTop + (e.clientY - startY); el.style.left = block.x + 'px'; el.style.top = block.y + 'px'; }
+                if (isResizing) { block.w = Math.max(50, startW + (e.clientX - startX)); block.h = Math.max(30, startH + (e.clientY - startY)); el.style.width = block.w + 'px'; el.style.height = block.h + 'px'; }
+            });
+            document.addEventListener('mouseup', () => { isDragging = false; isResizing = false; });
+        }
+
+        function renderProperties() {
+            const panel = document.getElementById('properties-panel');
+            if (!selectedId) { panel.innerHTML = '<p style="text-align: center; color: #999; font-size: 14px;">Selecciona un bloque para editar.</p>'; return; }
+            const block = config.landing.find(b => b.id === selectedId);
+            if (!block) return;
+            let html = `<h3>Propiedades del Bloque</h3>`;
+            if (block.type === 'text') html += `<label>Texto</label><input type="text" value="${block.content}" oninput="updateProp('content', this.value)">`;
+            else if (block.type === 'youtube') html += `<label>URL de YouTube</label><input type="text" value="${block.url}" oninput="updateProp('url', this.value)" placeholder="https://youtube.com/watch?v=...">`;
+            else if (block.type === 'banner') html += `
+                <label>Subir Imagen (desde tu PC)</label>
+                <input type="file" accept="image/*" onchange="uploadBannerImage(event)" style="margin-bottom: 10px;">
+                <label>O pega una URL</label>
+                <input type="text" value="${block.url}" oninput="updateProp('url', this.value)" placeholder="https://ejemplo.com/imagen.jpg">
+            `;
+            html += `<button class="btn-danger" onclick="deleteBlock('${block.id}')">Eliminar Bloque</button>`;
+            panel.innerHTML = html;
+        }
+
+        function updateProp(key, value) {
+            const block = config.landing.find(b => b.id === selectedId);
+            if (!block) return;
+            block[key] = value;
+            const el = document.getElementById('block-' + block.id);
+            if (!el) return;
+            if (block.type === 'text') { const d = el.querySelector('.text-content'); if (d) d.textContent = value; }
+            else if (block.type === 'youtube') { const vid = value && value.includes('v=') ? value.split('v=')[1].split('&')[0] : ''; const i = el.querySelector('iframe'); if (vid && i) i.src = `https://www.youtube.com/embed/${vid}`; }
+            else if (block.type === 'banner') { const img = el.querySelector('img'); if (img) img.src = value; }
+        }
+
+        async function uploadBannerImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                event.target.style.opacity = '0.5';
+                const res = await fetch(UPLOAD_URL, { method: 'POST', headers: { 'X-Admin-Token': SECURE_TOKEN }, body: formData });
+                if (!res.ok) throw new Error('Error al subir la imagen');
+                const data = await res.json();
+                const fullUrl = 'https://pdf.teclingoingles.com' + data.url;
+                updateProp('url', fullUrl);
+                alert('¡Imagen subida con éxito!');
+            } catch (e) { alert('Error al subir: ' + e.message); }
+            finally { event.target.style.opacity = '1'; }
+        }
+
+        function deleteBlock(id) { config.landing = config.landing.filter(b => b.id !== id); selectedId = null; renderCanvas(); }
+        function clearAll() { if(confirm('¿Seguro que quieres borrar todo?')) { config.landing = []; selectedId = null; renderCanvas(); } }
+
+        async function saveConfig(preview) {
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Admin-Token': SECURE_TOKEN },
+                    body: JSON.stringify(config)
+                });
+                if (!res.ok) throw new Error('Error al guardar');
+                alert('¡Configuración guardada en el servidor!');
+                if (preview) window.location.href = 'index.html';
+            } catch (e) { alert('Error: ' + e.message); }
         }
     </script>
 </body>
 </html>
-
