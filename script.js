@@ -1001,7 +1001,7 @@ if (mode === 'fill') {
          prevBtnText: '← Anterior',
          doneBtnText: '¡Entendido! ✓',
          steps: [
-             { element: '.pdf-container', popover: { title: '📄 Tu formulario', description: 'Aquí ves el PDF con los campos listos para llenar. Haz clic en cualquier campo y escribe.', side: 'top', align: 'center' } },
+             { element: '#pdfPages', popover: { title: '📄 Tu formulario', description: 'Aquí ves el PDF con los campos listos para llenar. Haz clic en cualquier campo y escribe.', side: 'top', align: 'center' } },
              { element: '#toggleFieldsBtn', popover: { title: '👁️ Mostrar/Ocultar recuadros', description: 'Si los recuadros azules no te dejan ver las líneas del documento original, usa este botón para volverlos transparentes.', side: 'left', align: 'center' } },
              { element: '#headerActions', popover: { title: ' Acciones rápidas', description: 'Aquí están todas las acciones: Guardar, Descargar, Modo Edición, Tutorial y más.', side: 'bottom', align: 'center' } },
              { element: '#saveBtn', popover: { title: '💾 Guardar (IMPORTANTE)', description: 'Antes de descargar, SIEMPRE presiona Guardar. Sin esto, tus datos no aparecerán en el PDF final.', side: 'bottom', align: 'center' } },

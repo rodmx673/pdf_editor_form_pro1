@@ -35,8 +35,8 @@ body.editing-mode header.header-hidden { transform: translateY(-100%); }
 body.header-hidden .pdf-container { padding-top: 15px; }
 .pdf-page { position: relative; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); background: white; border-radius: 8px; overflow: hidden; scroll-snap-align: center; max-width: 100%; width: 100%; display: flex; justify-content: center; }
 .pdf-page canvas { max-width: 100%; height: auto !important; }
-.field-rect { position: absolute; border: 2px solid #0071e3; background-color: rgba(0, 113, 227, 0.1); cursor: move; }
-.field-rect.selected { border-color: #ff6b00; background-color: rgba(255, 107, 0, 0.2); z-index: 10; }
+.field-rect { position: absolute; border: 2px solid #0071e3; background-color: rgba(0, 113, 227, 0.1); cursor: move; z-index: 46; }
+.field-rect.selected { border-color: #ff6b00; background-color: rgba(255, 107, 0, 0.2); z-index: 47; }
 
 /* MENÚ HAMBURGUESA */
 #hamburgerMenu { display: none; position: absolute; top: 15px; right: 15px; z-index: 1005; }
@@ -1618,3 +1618,20 @@ body.dark-mode .btn-tour-cancel:hover {
     background: #3a3a3c;
 }
 
+
+/* =========================================
+   PARCHES PARA EL TUTORIAL (DRIVER.JS)
+   ========================================= */
+/* 1. Evita que el header se oculte o se desplace durante el tutorial */
+body.driver-active header, 
+body.driver-active #headerActions {
+    z-index: 10005 !important;
+    transform: none !important;
+}
+
+/* 2. Elimina la línea blanca que deja el borde del header durante la capa oscura */
+body.driver-active header {
+    border-bottom: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+}
