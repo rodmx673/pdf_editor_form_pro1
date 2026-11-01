@@ -6,7 +6,7 @@ window.CustomLayer = (() => {
             const res = await fetch('https://pdf.teclingoingles.com/api/overlay-config');
             if (res.ok) return await res.json();
         } catch (e) { console.error('Error cargando config', e); }
-        return { landing: [], editing: [] };
+        return { active: true, landing: [], editing: [] };
     }
 
     function createDOM() {
@@ -14,6 +14,19 @@ window.CustomLayer = (() => {
         overlay = document.createElement('div');
         overlay.id = 'custom-ui-overlay';
         overlay.style.cssText = "position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:99999; display:none; backdrop-filter:blur(8px); pointer-events:none;";
+        
+        // Botón de cerrar (para el usuario)
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '✕ Ocultar anuncios';
+        closeBtn.style.cssText = "position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); color:white; border:none; padding:10px 15px; border-radius:20px; cursor:pointer; font-weight:bold; pointer-events:auto; z-index:10; transition:background 0.2s;";
+        closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255,255,255,0.4)';
+        closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255,255,255,0.2)';
+        closeBtn.onclick = () => {
+            localStorage.setItem('overlay_disabled', 'true'); // Guardar preferencia en este navegador
+            CustomLayer.stop();
+        };
+        overlay.appendChild(closeBtn);
+
         container = document.createElement('div');
         container.style.cssText = "position:absolute; inset:0; overflow:hidden;";
         overlay.appendChild(container);
@@ -39,9 +52,17 @@ window.CustomLayer = (() => {
 
     return {
         start: async (pageName) => {
+            // 1. Verificar si el usuario local decidió ocultarlo
+            if (localStorage.getItem('overlay_disabled') === 'true') return;
+            
+            // 2. Verificar si el administrador apagó la capa globalmente
             createDOM();
             config = await getConfig();
+            if (config.active === false) return; 
+            
+            // 3. Verificar si hay contenido
             if (!config[pageName] || config[pageName].length === 0) return;
+
             renderBlocks();
             overlay.style.display = 'block';
             setTimeout(() => overlay.style.opacity = 1, 10);
