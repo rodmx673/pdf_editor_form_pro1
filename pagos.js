@@ -1,54 +1,31 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const btnPlanes = document.getElementById('openPricingBtn'); 
-    const modal = document.getElementById('pricingModal');
-    const cerrar = document.getElementById('closePricingBtn');
-
-    if(btnPlanes && modal) {
-        btnPlanes.addEventListener('click', () => modal.style.display = 'flex');
-        if(cerrar) cerrar.addEventListener('click', () => modal.style.display = 'none');
-        
-        const botonesComprar = modal.querySelectorAll('button');
-        
-        botonesComprar.forEach(boton => {
-            if (boton.innerText.includes('Comprar')) {
-                boton.addEventListener('click', async function() {
-                    const esBasico = this.innerText.includes('Básico');
-                    const plan = esBasico ? 'basico' : 'pro';
-                    
-                    // 🔥 ESTO ES LO QUE FALTABA: GUARDAR SESIÓN Y CAMPOS
-                    if (typeof currentSession !== 'undefined' && currentSession) {
-                        localStorage.setItem('pdf_pendiente_id', currentSession);
-                    }
-                    if (typeof currentFields !== 'undefined' && currentFields.length > 0) {
-                        localStorage.setItem('pdf_pendiente_campos', JSON.stringify(currentFields));
-                    }
-                    localStorage.setItem('plan_comprado', plan);
-
-                    const textoOriginal = this.innerText;
-                    this.innerText = "Conectando...";
-                    this.disabled = true;
-                    
-                    try {
-                        const res = await fetch('/api/crear-sesion-pago', {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({ plan: plan })
-                        });
-                        
-                        const data = await res.json();
-                        if(data.url) {
-                            window.location.href = data.url;
-                        } else {
-                            throw new Error("No se recibió URL de pago");
-                        }
-                    } catch (e) {
-                        console.error("Error:", e);
-                        alert("Error al conectar con PayPal.");
-                        this.innerText = textoOriginal;
-                        this.disabled = false;
-                    }
-                });
-            }
-        });
+window.iniciarPago = async function(plan) {
+    const sessionId = localStorage.getItem('pdf_pendiente_id');
+    if (!sessionId) {
+        alert('No se encontró una sesión activa. Sube un PDF primero.');
+        return;
     }
-});
+
+    localStorage.setItem('plan_comprado', plan);
+    
+    // Cambiar el texto del botón si es posible (opcional)
+    const btns = document.querySelectorAll('#pricingModal button');
+    btns.forEach(b => { if (b.innerText.includes(plan === 'basico' ? '1.99' : '4.99')) b.innerText = 'Conectando...'; });
+
+    try {
+        const res = await fetch('/api/crear-sesion-pago', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan: plan, session_id: sessionId })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al crear sesión de pago');
+
+        // Redirigir a PayPal
+        window.location.href = data.url;
+    } catch (error) {
+        console.error('Error al iniciar pago:', error);
+        alert(error.message);
+        btns.forEach(b => { b.innerText = b.innerText.replace('Conectando...', 'Comprar'); });
+    }
+};
