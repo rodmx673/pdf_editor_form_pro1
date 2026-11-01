@@ -29,6 +29,13 @@
             </label>
         </div>
 
+                <div style="background: #fff3cd; padding: 10px; border-radius: 8px; border: 1px solid #ffeeba; margin-bottom: 20px;">
+            <label style="display: flex; flex-direction: column; margin: 0;">
+                <span style="font-weight: bold; color: #856404; margin-bottom: 5px;">⏱️ Duración del Anuncio (seg)</span>
+                <input type="number" id="ad-duration" value="10" style="width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 4px;" onchange="updateAdDuration(this.value)">
+            </label>
+            <p style="margin: 5px 0 0 0; font-size: 11px; color: #856404;">Tiempo antes de permitir cerrar el anuncio.</p>
+        </div>
         <button class="btn-primary" onclick="addBlock('text')">+ Añadir Texto</button>
         <button class="btn-primary" onclick="addBlock('youtube')">+ Añadir YouTube</button>
         <button class="btn-primary" onclick="addBlock('banner')">+ Añadir Banner/Imagen</button>
@@ -46,3 +53,4 @@
     <script src="admin.js"></script>
 </body>
 </html>
+

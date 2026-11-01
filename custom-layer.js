@@ -1,12 +1,12 @@
 window.CustomLayer = (() => {
-    let overlay, container, config = null;
+    let overlay, container, config = null, countdownInterval = null;
 
     async function getConfig() {
         try {
             const res = await fetch('https://pdf.teclingoingles.com/api/overlay-config?t=' + Date.now());
             if (res.ok) return await res.json();
         } catch (e) { console.error('Error cargando config', e); }
-        return { active: true, background: 'dark', landing: [], editing: [] };
+        return { active: true, background: 'dark', adDuration: 10, landing: [], editing: [] };
     }
 
     function createDOM() {
@@ -15,22 +15,62 @@ window.CustomLayer = (() => {
         overlay.id = 'custom-ui-overlay';
         overlay.style.cssText = "position:fixed; inset:0; z-index:99999; display:none; transition: opacity 0.4s ease; opacity: 0; pointer-events:none;";
         
-        const isMobile = window.innerWidth < 768;
+        // Contenedor de los botones de cierre (arriba derecha)
+        const btnContainer = document.createElement('div');
+        btnContainer.style.cssText = "position:absolute; top:20px; right:20px; display:flex; flex-direction:column; align-items:flex-end; gap:5px; pointer-events:auto; z-index:100000;";
+
         const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '✕ Ocultar anuncios';
-        // En móviles, lo mandamos abajo a la derecha para que no tape el contenido
-        const btnPos = isMobile ? 'bottom:20px; right:20px;' : 'top:20px; right:20px;';
+        closeBtn.id = 'custom-close-btn';
+        closeBtn.innerHTML = '🔒 Cierre en 10s...';
+        closeBtn.style.cssText = "background:rgba(0,0,0,0.6); color:white; border:1px solid rgba(255,255,255,0.3); padding:10px 15px; border-radius:20px; cursor:not-allowed; font-weight:bold; transition:all 0.2s; opacity:0.7;";
         
-        closeBtn.style.cssText = `position:absolute; ${btnPos} background:rgba(0,0,0,0.6); color:white; border:1px solid rgba(255,255,255,0.3); padding:10px 15px; border-radius:20px; cursor:pointer; font-weight:bold; pointer-events:auto; z-index:100000; transition:background 0.2s;`;
-        closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(0,0,0,0.8)';
-        closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(0,0,0,0.6)';
-        closeBtn.onclick = () => { localStorage.setItem('overlay_disabled', 'true'); CustomLayer.stop(); };
-        overlay.appendChild(closeBtn);
+        const skipBtn = document.createElement('button');
+        skipBtn.id = 'custom-skip-btn';
+        skipBtn.innerHTML = 'Saltar anuncio >';
+        skipBtn.style.cssText = "background:transparent; color:rgba(255,255,255,0.6); border:none; font-size:11px; text-decoration:underline; cursor:pointer; padding:0; margin-right:5px; display:none;";
+        
+        skipBtn.onclick = () => { localStorage.setItem('overlay_disabled', 'true'); CustomLayer.stop(); };
+
+        btnContainer.appendChild(closeBtn);
+        btnContainer.appendChild(skipBtn);
+        overlay.appendChild(btnContainer);
 
         container = document.createElement('div');
         container.style.cssText = "position:absolute; inset:0; overflow:hidden; z-index: 99999;";
         overlay.appendChild(container);
         document.body.appendChild(overlay);
+    }
+
+    function startCountdown(seconds) {
+        const closeBtn = document.getElementById('custom-close-btn');
+        const skipBtn = document.getElementById('custom-skip-btn');
+        let timeLeft = parseInt(seconds) || 10;
+        
+        closeBtn.disabled = true;
+        closeBtn.innerHTML = `🔒 Cierre en ${timeLeft}s...`;
+        closeBtn.style.cursor = 'not-allowed';
+        closeBtn.style.opacity = '0.7';
+        skipBtn.style.display = 'none';
+
+        clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            if (timeLeft > 0) {
+                closeBtn.innerHTML = `🔒 Cierre en ${timeLeft}s...`;
+                if (timeLeft <= 5) skipBtn.style.display = 'block'; // Mostrar "Saltar" a los 5 segundos
+            } else {
+                clearInterval(countdownInterval);
+                closeBtn.innerHTML = '✕ Ocultar anuncios';
+                closeBtn.disabled = false;
+                closeBtn.style.cursor = 'pointer';
+                closeBtn.style.opacity = '1';
+                closeBtn.style.background = 'rgba(0,0,0,0.6)';
+                closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(0,0,0,0.9)';
+                closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(0,0,0,0.6)';
+                closeBtn.onclick = () => { localStorage.setItem('overlay_disabled', 'true'); CustomLayer.stop(); };
+                skipBtn.style.display = 'none'; // Ocultar el "Saltar" porque ya puede cerrar
+            }
+        }, 1000);
     }
 
     function renderBlocks() {
@@ -47,28 +87,20 @@ window.CustomLayer = (() => {
 
             const el = document.createElement('div');
             
-            // MAGIA PARA MÓVILES: Si es video o imagen, lo hacemos ancho (90%) y centrado
             if (isMobile && (block.type === 'youtube' || block.type === 'banner')) {
                 el.style.cssText = `position:absolute; left:5%; top:${safeY}%; width:90%; pointer-events:auto; z-index: 100000; display:flex; justify-content:center;`;
-                if (block.type === 'youtube') {
-                    // Forzamos la proporción 16:9 para que el reproductor respire
-                    el.style.aspectRatio = '16 / 9';
-                }
+                if (block.type === 'youtube') el.style.aspectRatio = '16 / 9';
             } else {
-                // En PC, respetamos tu diseño al milímetro
                 el.style.cssText = `position:absolute; left:${safeX}%; top:${safeY}%; width:${safeW}%; height:${safeH}%; pointer-events:${(block.type === 'youtube' || block.type === 'banner') ? 'auto' : 'none'}; z-index: 100000;`;
             }
             
             if (block.type === 'text') {
                 let baseSize = parseInt(block.fontSize) || 24;
-                // Reducimos un poco más la letra en móvil para que no se vea gigante
                 const fontSize = isMobile ? Math.max(14, baseSize * 0.5) : baseSize;
                 const textColor = block.color || '#ffffff';
-                
-                el.innerHTML = `<div style="color:${textColor}; font-family:${block.fontFamily || 'sans-serif'}; font-size:${fontSize}px; font-weight:bold; text-shadow: 0px 2px 4px rgba(0,0,0,0.9), 0px 0px 8px rgba(0,0,0,0.6); width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center; box-sizing:border-box; padding:10px; word-break: break-word;">${block.content}</div>`;
+                el.innerHTML = `<div style="color:${textColor}; font-family:${block.fontFamily || 'sans-serif'}; font-size:${fontSize}px; font-weight:bold; text-shadow:0px 2px 4px rgba(0,0,0,0.9), 0px 0px 8px rgba(0,0,0,0.6); width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center; box-sizing:border-box; padding:10px; word-break: break-word;">${block.content}</div>`;
             } else if (block.type === 'youtube') {
                 const vid = block.url ? (block.url.includes('v=') ? block.url.split('v=')[1].split('&')[0] : (block.url.includes('youtu.be/') ? block.url.split('youtu.be/')[1].split('?')[0] : '')) : '';
-                // width 100% y height 100% dentro del contenedor
                 if (vid) el.innerHTML = `<iframe src="https://www.youtube.com/embed/${vid}?autoplay=1&playsinline=1&rel=0&controls=1" style="width:100%; height:100%; border:none; border-radius:8px;" allow="autoplay; fullscreen"></iframe>`;
             } else if (block.type === 'banner') {
                 if (block.url) el.innerHTML = `<img src="${block.url}" style="width:100%; height:100%; object-fit:contain; border-radius:8px;">`;
@@ -93,10 +125,15 @@ window.CustomLayer = (() => {
                 overlay.style.backdropFilter = 'blur(8px)';
             }
             renderBlocks();
+            
+            // Iniciar el temporizador
+            startCountdown(config.adDuration || 10);
+
             overlay.style.display = 'block';
             setTimeout(() => overlay.style.opacity = 1, 10);
         },
         stop: () => {
+            clearInterval(countdownInterval);
             if (overlay) {
                 overlay.style.opacity = 0;
                 setTimeout(() => { overlay.style.display = 'none'; if (container) container.innerHTML = ''; }, 400);

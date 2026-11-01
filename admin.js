@@ -2,7 +2,7 @@ const SECURE_TOKEN = 'PdfAdm1n_8f3a2b9c1d4e5f6g!';
 const API_URL = 'https://pdf.teclingoingles.com/api/overlay-config';
 const UPLOAD_URL = 'https://pdf.teclingoingles.com/api/upload-image';
 
-let config = { active: true, background: 'dark', landing: [], editing: [] };
+let config = { active: true, background: 'dark', adDuration: 10, landing: [], editing: [] };
 let selectedId = null;
 
 function checkAdminPass() {
@@ -31,10 +31,14 @@ async function loadConfig() {
     
     document.getElementById('layer-active-toggle').checked = config.active;
     document.getElementById('bg-toggle').checked = (config.background === 'transparent');
+    document.getElementById('ad-duration').value = config.adDuration || 10;
     updateCanvasBg();
     renderCanvas();
 }
 
+function updateAdDuration(val) {
+    config.adDuration = parseInt(val) || 10;
+}
 function toggleLayerActive() { config.active = document.getElementById('layer-active-toggle').checked; }
 function toggleBackground() { config.background = document.getElementById('bg-toggle').checked ? 'transparent' : 'dark'; updateCanvasBg(); }
 
@@ -332,3 +336,4 @@ async function saveConfig(preview) {
         if (preview) window.location.href = 'index.html';
     } catch (e) { alert('Error: ' + e.message); }
 }
+
