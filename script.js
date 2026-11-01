@@ -1215,3 +1215,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
+// ==========================================
+// SISTEMA DE TRADUCCIÓN RECONSTRUIDO
+// ==========================================
+const translations = {
+    es: {
+        uploadText: "Arrastra tu PDF aquí o haz clic para seleccionar",
+        fillMode: "✍️ Modo Llenado",
+        pencil: "✏️ Lápiz",
+        save: "💾 Guardar",
+        downloadSealed: "🔒 Descargar Sellado",
+        tutorial: "🎓 Tutorial",
+        plans: "💳 Planes",
+        step1: "Subir", step2: "Procesar", step3: "Editar", step4: "Descargar"
+    },
+    en: {
+        uploadText: "Drag your PDF here or click to select",
+        fillMode: "✍️ Fill Mode",
+        pencil: "✏️ Pencil",
+        save: "💾 Save",
+        downloadSealed: "🔒 Download Sealed",
+        tutorial: "🎓 Tutorial",
+        plans: "💳 Plans",
+        step1: "Upload", step2: "Process", step3: "Edit", step4: "Download"
+    }
+};
+
+let currentLang = localStorage.getItem('app_lang') || 'es';
+
+function applyLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('app_lang', lang);
+    const t = translations[lang];
+    
+    const btn = document.getElementById('langToggle');
+    if (btn) btn.innerHTML = lang === 'es' ? '🇲🇽 ES' : '🇺🇸 EN';
+
+    const uploadP = document.querySelector('#uploadArea p');
+    if (uploadP && !uploadP.textContent.includes('Analizando') && !uploadP.textContent.includes('Procesando') && !uploadP.textContent.includes('Error')) {
+        uploadP.textContent = t.uploadText;
+    }
+
+    const setHTML = (id, text) => { const el = document.getElementById(id); if (el) el.innerHTML = text; };
+    
+    setHTML('fillModeBtn', t.fillMode);
+    setHTML('drawModeBtn', t.pencil);
+    setHTML('saveBtn', t.save + '<span id="unsavedBadge" class="unsaved-badge"></span>');
+    setHTML('downloadSealedBtn', t.downloadSealed);
+    setHTML('tourBtnMenu', t.tutorial);
+    setHTML('openPricingBtn', t.plans);
+
+    setHTML('step-1', '<span>1</span> <span>' + t.step1 + '</span>');
+    setHTML('step-2', '<span>2</span> <span>' + t.step2 + '</span>');
+    setHTML('step-3', '<span>3</span> <span>' + t.step3 + '</span>');
+    setHTML('step-4', '<span>4</span> <span>' + t.step4 + '</span>');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => applyLanguage(currentLang), 100); 
+});
+
+document.getElementById('langToggle')?.addEventListener('click', () => {
+    applyLanguage(currentLang === 'es' ? 'en' : 'es');
+});
