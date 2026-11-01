@@ -58,7 +58,7 @@ window.CustomLayer = (() => {
                 
                 el.innerHTML = `<div style="color:white; font-family:${block.fontFamily || 'sans-serif'}; font-size:${fontSize}px; font-weight:bold; text-shadow:0 2px 4px rgba(0,0,0,0.8); width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center; box-sizing:border-box; padding:10px; word-break: break-word;">${block.content}</div>`;
             } else if (block.type === 'youtube') {
-                const vid = block.url && block.url.includes('v=') ? block.url.split('v=')[1].split('&')[0] : '';
+                const vid = block.url ? (block.url.includes('v=') ? block.url.split('v=')[1].split('&')[0] : (block.url.includes('youtu.be/') ? block.url.split('youtu.be/')[1].split('?')[0] : '')) : '';
                 if (vid) el.innerHTML = `<iframe src="https://www.youtube.com/embed/${vid}?autoplay=1&mute=1" style="width:100%; height:100%; border:none; border-radius:8px;" allow="autoplay"></iframe>`;
             } else if (block.type === 'banner') {
                 if (block.url) el.innerHTML = `<img src="${block.url}" style="width:100%; height:100%; object-fit:cover; border-radius:8px;">`;
@@ -96,4 +96,5 @@ window.CustomLayer = (() => {
         }
     };
 })();
+
 
