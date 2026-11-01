@@ -117,7 +117,7 @@ uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.styl
 function selectFile(file) {
 selectedFile = file;
 uploadArea.querySelector('p').textContent = '⏳ Analizando calidad del PDF...';
-if (window.CustomLayer) window.CustomLayer.start('landing');
+
 uploadArea.classList.add('processing');
 const spinner = document.getElementById('appIconSpinner');
 if (spinner) spinner.classList.add('processing');
@@ -125,6 +125,7 @@ updateStepper(2);
 setTimeout(() => { analizarYProcesar(); }, 500);
 }
 async function analizarYProcesar() {
+    if (window.CustomLayer) window.CustomLayer.start('landing');
 if (!selectedFile) return;
 const formData = new FormData(); formData.append('file', selectedFile);
 try {
@@ -1283,3 +1284,4 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('langToggle')?.addEventListener('click', () => {
     applyLanguage(currentLang === 'es' ? 'en' : 'es');
 });
+
