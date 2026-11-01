@@ -132,6 +132,7 @@ function setupDragAndDrop(el, resizeHandle, block) {
         if (isResizing) { 
             block.w = Math.max(5, startW + ((clientX - startX) / canvasW) * 100); 
             block.h = Math.max(5, startH + ((clientY - startY) / canvasH) * 100); 
+            block.ratio = null; 
             el.style.width = block.w + '%'; el.style.height = block.h + '%'; 
         }
         if(e.cancelable) e.preventDefault();
@@ -300,5 +301,6 @@ async function saveConfig(preview) {
         if (preview) window.location.href = 'index.html';
     } catch (e) { alert('Error: ' + e.message); }
 }
+
 
 
