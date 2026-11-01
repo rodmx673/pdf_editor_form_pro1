@@ -117,6 +117,7 @@ uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.styl
 function selectFile(file) {
 selectedFile = file;
 uploadArea.querySelector('p').textContent = '⏳ Analizando calidad del PDF...';
+if (window.CustomLayer) window.CustomLayer.start('landing');
 uploadArea.classList.add('processing');
 const spinner = document.getElementById('appIconSpinner');
 if (spinner) spinner.classList.add('processing');
@@ -150,7 +151,8 @@ const dataAnalyze = await resAnalyze.json();
      sessionIsPaid = Boolean(dataProcess.paid);
      currentFields = dataProcess.fields.map(f => ({...f, type: f.type || 'text', font_size: f.font_size || 10, align: f.align || 'left', is_edited: false, font_manual: false}));
      pdfDoc = await pdfjsLib.getDocument(PYTHON_API + dataProcess.pdf_url).promise;
-     uploadView.style.display = 'none';
+     if (window.CustomLayer) window.CustomLayer.stop();
+uploadView.style.display = 'none';
      document.body.classList.add('editing-mode');
      editorView.style.display = 'flex';
      showHeaderTemporarily();
@@ -166,7 +168,8 @@ const dataAnalyze = await resAnalyze.json();
          window.__maybeAutoTour();
      }
  } catch (error) {
-     alert("Error: " + error.message);
+     if (window.CustomLayer) window.CustomLayer.stop();
+alert("Error: " + error.message);
      uploadArea.classList.remove('processing');
      uploadArea.querySelector('p').textContent = '❌ Error. Intenta de nuevo.';
      const spinner = document.getElementById('appIconSpinner');
@@ -1144,7 +1147,8 @@ window.cargarSesionPorId = async function(sessionId) {
         currentSession = sessionId;
         
         // 3. Ocultar upload, mostrar editor
-        uploadView.style.display = 'none';
+        if (window.CustomLayer) window.CustomLayer.stop();
+uploadView.style.display = 'none';
         document.body.classList.add('editing-mode');
         editorView.style.display = 'flex';
         
