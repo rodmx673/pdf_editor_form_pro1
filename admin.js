@@ -27,7 +27,8 @@ async function loadConfig() {
             if (config.active === undefined) config.active = true;
             if (config.background === undefined) config.background = 'dark';
         }
-    } catch (e) { console.log('Usando configuración por defecto'); }
+    } catch (e) { console.log('Error cargando', e); }
+    
     document.getElementById('layer-active-toggle').checked = config.active;
     document.getElementById('bg-toggle').checked = (config.background === 'transparent');
     updateCanvasBg();
@@ -50,9 +51,10 @@ function generateId() { return Math.random().toString(36).substr(2, 9); }
 
 function addBlock(type) {
     const newBlock = { 
-        id: generateId(), type: type, x: 100, y: 100, w: 300, h: 150, 
+        id: generateId(), type: type, 
+        x: 30, y: 30, w: 40, h: 15, 
         content: type === 'text' ? 'Texto de ejemplo' : '', url: '',
-        fontSize: 24, fontFamily: 'sans-serif'
+        fontSize: 24, fontFamily: 'sans-serif', color: '#ffffff'
     };
     config.landing.push(newBlock);
     selectedId = newBlock.id;
@@ -65,14 +67,14 @@ function renderCanvas() {
     config.landing.forEach(block => {
         const el = document.createElement('div');
         el.className = 'draggable-block' + (selectedId === block.id ? ' selected' : '');
-        el.style.left = block.x + 'px'; el.style.top = block.y + 'px';
-        el.style.width = block.w + 'px'; el.style.height = block.h + 'px';
+        el.style.left = block.x + '%'; el.style.top = block.y + '%';
+        el.style.width = block.w + '%'; el.style.height = block.h + '%';
         el.id = 'block-' + block.id;
 
         if (block.type === 'text') {
-            el.innerHTML = `<div class="text-content" style="font-size:${block.fontSize || 24}px; font-family:${block.fontFamily || 'sans-serif'};">${block.content}</div>`;
+            el.innerHTML = `<div class="text-content" style="font-size:${block.fontSize || 24}px; font-family:${block.fontFamily || 'sans-serif'}; color:${block.color || '#ffffff'};">${block.content}</div>`;
         } else if (block.type === 'youtube') {
-            const vid = block.url && block.url.includes('v=') ? block.url.split('v=')[1].split('&')[0] : '';
+            const vid = block.url && block.url.includes('v=') ? block.url.split('v=')[1].split('&')[0] : (block.url && block.url.includes('youtu.be/') ? block.url.split('youtu.be/')[1].split('?')[0] : '');
             el.innerHTML = vid ? `<iframe src="https://www.youtube.com/embed/${vid}" allow="autoplay"></iframe>` : 'Sin video';
         } else if (block.type === 'banner') {
             el.innerHTML = block.url ? `<img src="${block.url}">` : 'Sin imagen';
@@ -81,25 +83,62 @@ function renderCanvas() {
         const resizeHandle = document.createElement('div');
         resizeHandle.className = 'resize-handle';
         el.appendChild(resizeHandle);
+        
         setupDragAndDrop(el, resizeHandle, block);
-        el.addEventListener('mousedown', (e) => { if(e.target !== resizeHandle && selectedId !== block.id) { selectedId = block.id; renderCanvas(); } });
+        
+        el.addEventListener('mousedown', (e) => { 
+            if(e.target !== resizeHandle && selectedId !== block.id) { 
+                selectedId = block.id; 
+                document.querySelectorAll('.draggable-block').forEach(d => d.classList.remove('selected'));
+                el.classList.add('selected');
+                renderProperties(); 
+            } 
+        });
         canvas.appendChild(el);
     });
-    renderProperties();
 }
 
 function setupDragAndDrop(el, resizeHandle, block) {
     let isDragging = false, isResizing = false, startX, startY, startLeft, startTop, startW, startH;
-    el.addEventListener('mousedown', (e) => {
+
+    const handleStart = (e) => {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
         if (e.target === resizeHandle) isResizing = true; else isDragging = true;
-        startX = e.clientX; startY = e.clientY; startLeft = block.x; startTop = block.y; startW = block.w; startH = block.h;
-        e.preventDefault();
-    });
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) { block.x = startLeft + (e.clientX - startX); block.y = startTop + (e.clientY - startY); el.style.left = block.x + 'px'; el.style.top = block.y + 'px'; }
-        if (isResizing) { block.w = Math.max(50, startW + (e.clientX - startX)); block.h = Math.max(30, startH + (e.clientY - startY)); el.style.width = block.w + 'px'; el.style.height = block.h + 'px'; }
-    });
-    document.addEventListener('mouseup', () => { isDragging = false; isResizing = false; });
+        startX = clientX; startY = clientY; startLeft = block.x; startTop = block.y; startW = block.w; startH = block.h;
+        if(e.cancelable) e.preventDefault();
+    };
+
+    const handleMove = (e) => {
+        if (!isDragging && !isResizing) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const canvasW = el.parentElement.offsetWidth;
+        const canvasH = el.parentElement.offsetHeight;
+        
+        if (isDragging) { 
+            block.x = startLeft + ((clientX - startX) / canvasW) * 100; 
+            block.y = startTop + ((clientY - startY) / canvasH) * 100; 
+            el.style.left = block.x + '%'; el.style.top = block.y + '%'; 
+        }
+        if (isResizing) { 
+            block.w = Math.max(5, startW + ((clientX - startX) / canvasW) * 100); 
+            block.h = Math.max(5, startH + ((clientY - startY) / canvasH) * 100); 
+            el.style.width = block.w + '%'; el.style.height = block.h + '%'; 
+        }
+        if(e.cancelable) e.preventDefault();
+    };
+
+    const handleEnd = () => { isDragging = false; isResizing = false; renderProperties(); };
+
+    el.addEventListener('mousedown', handleStart);
+    el.addEventListener('touchstart', handleStart, {passive: false});
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('touchmove', handleMove, {passive: false});
+    document.addEventListener('mouseup', handleEnd);
+    document.addEventListener('touchend', handleEnd);
 }
 
 function renderProperties() {
@@ -109,12 +148,27 @@ function renderProperties() {
     if (!block) return;
     
     let html = `<h3>Propiedades del Bloque</h3>`;
+    
+    html += `
+        <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <div style="flex:1;"><label>X (%)</label><input type="number" value="${Math.round(block.x)}" oninput="updateProp('x', parseFloat(this.value))"></div>
+            <div style="flex:1;"><label>Y (%)</label><input type="number" value="${Math.round(block.y)}" oninput="updateProp('y', parseFloat(this.value))"></div>
+        </div>
+        <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <div style="flex:1;"><label>Ancho (%)</label><input type="number" value="${Math.round(block.w)}" oninput="updateProp('w', parseFloat(this.value))"></div>
+            <div style="flex:1;"><label>Alto (%)</label><input type="number" value="${Math.round(block.h)}" oninput="updateProp('h', parseFloat(this.value))"></div>
+        </div>
+        <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;">
+    `;
+
     if (block.type === 'text') {
         html += `
             <label>Texto</label>
             <input type="text" value="${block.content}" oninput="updateProp('content', this.value)">
             <label>Tamaño de letra (px)</label>
             <input type="number" value="${block.fontSize || 24}" oninput="updateProp('fontSize', this.value)" min="10" max="100">
+            <label>Color de Letra</label>
+            <input type="color" value="${block.color || '#ffffff'}" oninput="updateProp('color', this.value)" style="height: 40px; cursor: pointer;">
             <label>Tipografía</label>
             <select onchange="updateProp('fontFamily', this.value)">
                 <option value="sans-serif" ${block.fontFamily === 'sans-serif' ? 'selected' : ''}>Moderna (Sans-Serif)</option>
@@ -129,7 +183,7 @@ function renderProperties() {
         html += `<label>URL de YouTube</label><input type="text" value="${block.url}" oninput="updateProp('url', this.value)" placeholder="https://youtube.com/watch?v=...">`;
     } else if (block.type === 'banner') {
         html += `
-            <label>Subir Imagen (desde tu PC)</label>
+            <label>Subir Imagen (desde tu PC/Cel)</label>
             <input type="file" accept="image/*" onchange="uploadBannerImage(event)" style="margin-bottom: 10px;">
             <label>O pega una URL</label>
             <input type="text" value="${block.url}" oninput="updateProp('url', this.value)" placeholder="https://ejemplo.com/imagen.jpg">
@@ -143,6 +197,16 @@ function updateProp(key, value) {
     const block = config.landing.find(b => b.id === selectedId);
     if (!block) return;
     block[key] = value;
+    
+    if (['x','y','w','h'].includes(key)) {
+        const el = document.getElementById('block-' + block.id);
+        if (el) {
+            el.style.left = block.x + '%'; el.style.top = block.y + '%';
+            el.style.width = block.w + '%'; el.style.height = block.h + '%';
+        }
+        return;
+    }
+
     const el = document.getElementById('block-' + block.id);
     if (!el) return;
     if (block.type === 'text') {
@@ -151,9 +215,13 @@ function updateProp(key, value) {
             d.textContent = block.content;
             d.style.fontSize = (block.fontSize || 24) + 'px';
             d.style.fontFamily = block.fontFamily || 'sans-serif';
+            d.style.color = block.color || '#ffffff';
         }
     }
-    else if (block.type === 'youtube') { const vid = value && value.includes('v=') ? value.split('v=')[1].split('&')[0] : ''; const i = el.querySelector('iframe'); if (vid && i) i.src = `https://www.youtube.com/embed/${vid}`; }
+    else if (block.type === 'youtube') { 
+        const vid = value && value.includes('v=') ? value.split('v=')[1].split('&')[0] : (value && value.includes('youtu.be/') ? value.split('youtu.be/')[1].split('?')[0] : ''); 
+        const i = el.querySelector('iframe'); if (vid && i) i.src = `https://www.youtube.com/embed/${vid}`; 
+    }
     else if (block.type === 'banner') { const img = el.querySelector('img'); if (img) img.src = value; }
 }
 
