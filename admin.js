@@ -50,11 +50,13 @@ function updateCanvasBg() {
 function generateId() { return Math.random().toString(36).substr(2, 9); }
 
 function addBlock(type) {
+    // Desplazamiento en cascada para que los bloques nuevos no queden exactamente encima
+    const offset = (config.landing.length % 8) * 5;
     const newBlock = { 
         id: generateId(), type: type, 
-        x: 30, y: 30, w: 40, h: 15, 
+        x: 20 + offset, y: 20 + offset, w: 40, h: 15, 
         content: type === 'text' ? 'Texto de ejemplo' : '', url: '',
-        fontSize: 24, fontFamily: 'sans-serif', color: '#ffffff'
+        fontSize: 24, fontFamily: 'sans-serif', color: '#ffffff', ratio: null
     };
     config.landing.push(newBlock);
     selectedId = newBlock.id;
@@ -64,25 +66,34 @@ function addBlock(type) {
 function renderCanvas() {
     const canvas = document.getElementById('canvas');
     canvas.innerHTML = '';
+    
+    // Al hacer clic en el fondo vacío, deseleccionar todo
+    canvas.onmousedown = (e) => {
+        if (e.target === canvas) {
+            selectedId = null;
+            document.querySelectorAll('.draggable-block').forEach(d => {
+                d.classList.remove('selected');
+                d.style.zIndex = 1;
+            });
+            renderProperties();
+        }
+    };
+
     config.landing.forEach(block => {
         const el = document.createElement('div');
         el.className = 'draggable-block' + (selectedId === block.id ? ' selected' : '');
         el.style.left = block.x + '%'; el.style.top = block.y + '%';
         el.style.width = block.w + '%'; el.style.height = block.h + '%';
         el.id = 'block-' + block.id;
+        
+        if (selectedId === block.id) el.style.zIndex = 100;
 
         if (block.type === 'text') {
             el.innerHTML = `<div class="text-content" style="font-size:${block.fontSize || 24}px; font-family:${block.fontFamily || 'sans-serif'}; color:${block.color || '#ffffff'};">${block.content}</div>`;
-            } else if (block.type === 'youtube') {
-        html += `<label>URL de YouTube</label><input type="text" value="\" oninput="updateProp('url', this.value)" placeholder="https://youtube.com/watch?v=...">`;
-        html += `<label>Tamaño Predefinido</label>
-        <select onchange="applyVideoRatio(this.value)">
-            <option value="free" \>Libre (Ajuste manual)</option>
-            <option value="16:9" \>Horizontal (16:9 - YouTube Normal)</option>
-            <option value="9:16" \>Vertical (9:16 - Shorts/TikTok)</option>
-            <option value="1:1" \>Cuadrado (1:1)</option>
-        </select>`;
-    } else if (block.type === 'banner') {
+        } else if (block.type === 'youtube') {
+            const vid = block.url ? (block.url.includes('v=') ? block.url.split('v=')[1].split('&')[0] : (block.url.includes('youtu.be/') ? block.url.split('youtu.be/')[1].split('?')[0] : '')) : '';
+            el.innerHTML = vid ? `<iframe src="https://www.youtube.com/embed/${vid}" allow="autoplay"></iframe>` : 'Sin video';
+        } else if (block.type === 'banner') {
             el.innerHTML = block.url ? `<img src="${block.url}">` : 'Sin imagen';
         }
 
@@ -93,10 +104,16 @@ function renderCanvas() {
         setupDragAndDrop(el, resizeHandle, block);
         
         el.addEventListener('mousedown', (e) => { 
-            if(e.target !== resizeHandle && selectedId !== block.id) { 
+            if(e.target !== resizeHandle) { 
                 selectedId = block.id; 
-                document.querySelectorAll('.draggable-block').forEach(d => d.classList.remove('selected'));
+                // Traer al frente (Bring to Front)
+                document.querySelectorAll('.draggable-block').forEach(d => {
+                    d.classList.remove('selected');
+                    d.style.zIndex = 1;
+                });
                 el.classList.add('selected');
+                el.style.zIndex = 100;
+                el.parentNode.appendChild(el); // Mover al final del DOM para que tape a los demás
                 renderProperties(); 
             } 
         });
@@ -132,13 +149,18 @@ function setupDragAndDrop(el, resizeHandle, block) {
         if (isResizing) { 
             block.w = Math.max(5, startW + ((clientX - startX) / canvasW) * 100); 
             block.h = Math.max(5, startH + ((clientY - startY) / canvasH) * 100); 
-            block.ratio = null; 
+            block.ratio = null;
             el.style.width = block.w + '%'; el.style.height = block.h + '%'; 
         }
         if(e.cancelable) e.preventDefault();
     };
 
-    const handleEnd = () => { if (isDragging || isResizing) { isDragging = false; isResizing = false; renderProperties(); } };
+    const handleEnd = () => { 
+        if (isDragging || isResizing) { 
+            isDragging = false; isResizing = false; 
+            renderProperties(); 
+        } 
+    };
 
     el.addEventListener('mousedown', handleStart);
     el.addEventListener('touchstart', handleStart, {passive: false});
@@ -158,9 +180,8 @@ function applyVideoRatio(ratioStr) {
         const rw = parseFloat(parts[0]);
         const rh = parseFloat(parts[1]);
         
-        // Ancho base según si es horizontal o vertical
         let w = 40;
-        if (rh > rw) w = 25; // Si es vertical, un poco más angosto
+        if (rh > rw) w = 25;
 
         const vw = window.innerWidth;
         const vh = window.innerHeight;
@@ -216,14 +237,14 @@ function renderProperties() {
                 <option value="Impact, sans-serif" ${block.fontFamily === 'Impact, sans-serif' ? 'selected' : ''}>Impact</option>
             </select>
         `;
-        } else if (block.type === 'youtube') {
-        html += `<label>URL de YouTube</label><input type="text" value="\" oninput="updateProp('url', this.value)" placeholder="https://youtube.com/watch?v=...">`;
+    } else if (block.type === 'youtube') {
+        html += `<label>URL de YouTube</label><input type="text" value="${block.url}" oninput="updateProp('url', this.value)" placeholder="https://youtube.com/watch?v=...">`;
         html += `<label>Tamaño Predefinido</label>
         <select onchange="applyVideoRatio(this.value)">
-            <option value="free" \>Libre (Ajuste manual)</option>
-            <option value="16:9" \>Horizontal (16:9 - YouTube Normal)</option>
-            <option value="9:16" \>Vertical (9:16 - Shorts/TikTok)</option>
-            <option value="1:1" \>Cuadrado (1:1)</option>
+            <option value="free" ${!block.ratio ? 'selected' : ''}>Libre (Ajuste manual)</option>
+            <option value="16:9" ${block.ratio === '16:9' ? 'selected' : ''}>Horizontal (16:9 - YouTube Normal)</option>
+            <option value="9:16" ${block.ratio === '9:16' ? 'selected' : ''}>Vertical (9:16 - Shorts/TikTok)</option>
+            <option value="1:1" ${block.ratio === '1:1' ? 'selected' : ''}>Cuadrado (1:1)</option>
         </select>`;
     } else if (block.type === 'banner') {
         html += `
@@ -231,6 +252,13 @@ function renderProperties() {
             <input type="file" accept="image/*" onchange="uploadBannerImage(event)" style="margin-bottom: 10px;">
             <label>O pega una URL</label>
             <input type="text" value="${block.url}" oninput="updateProp('url', this.value)" placeholder="https://ejemplo.com/imagen.jpg">
+            <label>Tamaño Predefinido</label>
+            <select onchange="applyVideoRatio(this.value)">
+                <option value="free" ${!block.ratio ? 'selected' : ''}>Libre (Ajuste manual)</option>
+                <option value="16:9" ${block.ratio === '16:9' ? 'selected' : ''}>Horizontal (16:9)</option>
+                <option value="9:16" ${block.ratio === '9:16' ? 'selected' : ''}>Vertical (9:16)</option>
+                <option value="1:1" ${block.ratio === '1:1' ? 'selected' : ''}>Cuadrado (1:1)</option>
+            </select>
         `;
     }
     html += `<button class="btn-danger" onclick="deleteBlock('${block.id}')">Eliminar Bloque</button>`;
@@ -298,9 +326,9 @@ async function saveConfig(preview) {
         });
         if (!res.ok) throw new Error('Error al guardar');
         alert('¡Configuración guardada en el servidor!');
+        // Cerrar las herramientas después de guardar
+        selectedId = null;
+        renderCanvas();
         if (preview) window.location.href = 'index.html';
     } catch (e) { alert('Error: ' + e.message); }
 }
-
-
-
