@@ -3,7 +3,8 @@ window.CustomLayer = (() => {
 
     async function getConfig() {
         try {
-            const res = await fetch('https://pdf.teclingoingles.com/api/overlay-config');
+            // Anti-caché para siempre traer lo último
+            const res = await fetch('https://pdf.teclingoingles.com/api/overlay-config?t=' + Date.now());
             if (res.ok) return await res.json();
         } catch (e) { console.error('Error cargando config', e); }
         return { active: true, background: 'dark', landing: [], editing: [] };
@@ -14,10 +15,8 @@ window.CustomLayer = (() => {
         
         overlay = document.createElement('div');
         overlay.id = 'custom-ui-overlay';
-        // Configuración base del overlay
         overlay.style.cssText = "position:fixed; inset:0; z-index:99999; display:none; transition: opacity 0.4s ease; opacity: 0; pointer-events:none;";
         
-        // Botón de cerrar
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = '✕ Ocultar anuncios';
         closeBtn.style.cssText = "position:absolute; top:20px; right:20px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.3); padding:10px 15px; border-radius:20px; cursor:pointer; font-weight:bold; pointer-events:auto; z-index:10; transition:background 0.2s;";
@@ -38,12 +37,26 @@ window.CustomLayer = (() => {
     function renderBlocks() {
         container.innerHTML = '';
         if (!config.landing || config.landing.length === 0) return;
+        
+        const isMobile = window.innerWidth < 768;
+
         config.landing.forEach(block => {
             const el = document.createElement('div');
-            el.style.cssText = `position:absolute; left:${block.x}px; top:${block.y}px; width:${block.w}px; height:${block.h}px; pointer-events:${(block.type === 'youtube' || block.type === 'banner') ? 'auto' : 'none'};`;
+            
+            // PROTECCIÓN: Si por alguna razón los valores son muy grandes (píxeles viejos), los forzamos a un mínimo visible
+            let safeX = block.x > 100 ? 10 : block.x;
+            let safeY = block.y > 100 ? 10 : block.y;
+            let safeW = block.w > 100 ? 80 : block.w;
+            let safeH = block.h > 100 ? 20 : block.h;
+
+            el.style.cssText = `position:absolute; left:${safeX}%; top:${safeY}%; width:${safeW}%; height:${safeH}%; pointer-events:${(block.type === 'youtube' || block.type === 'banner') ? 'auto' : 'none'}; z-index: 2;`;
             
             if (block.type === 'text') {
-                el.innerHTML = `<div style="color:white; font-family:${block.fontFamily || 'sans-serif'}; font-size:${block.fontSize || 24}px; font-weight:bold; text-shadow:0 2px 4px rgba(0,0,0,0.8); width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center; box-sizing:border-box; padding:10px;">${block.content}</div>`;
+                // PROTECCIÓN: Evitar que el tamaño de la letra sea NaN o indefinido
+                let baseSize = parseInt(block.fontSize) || 24;
+                const fontSize = isMobile ? Math.max(16, baseSize * 0.6) : baseSize;
+                
+                el.innerHTML = `<div style="color:white; font-family:${block.fontFamily || 'sans-serif'}; font-size:${fontSize}px; font-weight:bold; text-shadow:0 2px 4px rgba(0,0,0,0.8); width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center; box-sizing:border-box; padding:10px; word-break: break-word;">${block.content}</div>`;
             } else if (block.type === 'youtube') {
                 const vid = block.url && block.url.includes('v=') ? block.url.split('v=')[1].split('&')[0] : '';
                 if (vid) el.innerHTML = `<iframe src="https://www.youtube.com/embed/${vid}?autoplay=1&mute=1" style="width:100%; height:100%; border:none; border-radius:8px;" allow="autoplay"></iframe>`;
@@ -63,7 +76,6 @@ window.CustomLayer = (() => {
             if (config.active === false) return; 
             if (!config[pageName] || config[pageName].length === 0) return;
 
-            // Aplicar estilo de fondo según configuración
             if (config.background === 'transparent') {
                 overlay.style.background = 'transparent';
                 overlay.style.backdropFilter = 'none';
