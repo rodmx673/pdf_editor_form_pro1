@@ -39,6 +39,7 @@ setTimeout(() => {
 }
 let selectedFile = null, currentSession = null, currentFields = [], selectedFieldName = null, currentScale = 1, pdfDoc = null, isZoomed = false, isFillMode = false, isDrawingMode = false, isDrawing = false, drawStartX, drawStartY, resizeTimeout = null, headerTimeout = null, saveTimeout = null;
 let sessionIsPaid = false;
+let isTourActive = false;
 let sessionPlan = 'none';
 let paywallShown = false;
 let isDraggingPopover = false, popoverStartX, popoverStartY, popoverStartLeft, popoverStartTop;
@@ -544,6 +545,7 @@ updateUnsavedBadge();
 document.querySelectorAll('.field-rect').forEach(el => el.classList.remove('edited-field'));
             const dlBtn = document.getElementById('downloadBtn');
             if (dlBtn) {
+                if (isTourActive) return;
                 dlBtn.style.display = 'block'; // Siempre visible
                 dlBtn.onclick = (e) => {
                     e.preventDefault();
@@ -1035,6 +1037,7 @@ originalShowHeaderTemporarily.apply(this, arguments);
 }
 const TOUR_VERSION = 'v1';
 function runTour(mode) {
+    isTourActive = true;
 if (typeof window.driver === 'undefined') {
 console.warn('Driver.js no cargado. Reintentando en 500ms...');
 setTimeout(() => {
@@ -1047,6 +1050,7 @@ let tour;
 if (mode === 'fill') {
      tour = driverFactory({
          showProgress: true,
+        onDestroyed: () => { isTourActive = false; },
          showButtons: ['next', 'previous', 'close'],
          progressText: 'Paso {{current}} de {{total}}',
          nextBtnText: 'Siguiente →',
@@ -1063,6 +1067,7 @@ if (mode === 'fill') {
  } else {
      tour = driverFactory({
          showProgress: true,
+        onDestroyed: () => { isTourActive = false; },
          showButtons: ['next', 'previous', 'close'],
          progressText: 'Paso {{current}} de {{total}}',
          nextBtnText: 'Siguiente →',
@@ -1334,6 +1339,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('langToggle')?.addEventListener('click', () => {
     applyLanguage(currentLang === 'es' ? 'en' : 'es');
 });
+
 
 
 
