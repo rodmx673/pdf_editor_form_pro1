@@ -6,11 +6,16 @@ window.iniciarPago = async function(plan) {
     }
 
     localStorage.setItem('plan_comprado', plan);
-    if (typeof window.logEvent === 'function') window.logEvent('payment_initiated', { plan: plan, price: plan === 'basico' ? '1.99' : '4.99' });
     
-    // Cambiar el texto del botón si es posible (opcional)
+    if (typeof window.logEvent === 'function') {
+        window.logEvent('payment_initiated', { plan: plan, price: plan === 'basico' ? '1.99' : '4.99' });
+    }
+
     const btns = document.querySelectorAll('#pricingModal button');
-    btns.forEach(b => { if (b.innerText.includes(plan === 'basico' ? '1.99' : '4.99')) b.innerText = 'Conectando...'; });
+    btns.forEach(b => { 
+        if (b.innerText.includes('Básico') || b.innerText.includes('1.99')) b.innerText = 'Conectando...'; 
+        if (b.innerText.includes('Pro') || b.innerText.includes('4.99')) b.innerText = 'Conectando...'; 
+    });
 
     try {
         const res = await fetch('/api/crear-sesion-pago', {
@@ -22,7 +27,6 @@ window.iniciarPago = async function(plan) {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error al crear sesión de pago');
 
-        // Redirigir a PayPal
         window.location.href = data.url;
     } catch (error) {
         console.error('Error al iniciar pago:', error);
@@ -31,4 +35,17 @@ window.iniciarPago = async function(plan) {
     }
 };
 
-
+document.addEventListener('DOMContentLoaded', () => {
+    const planButtons = document.querySelectorAll('#pricingModal button');
+    planButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const text = btn.innerText;
+            if (text.includes('Básico') || text.includes('1.99')) {
+                window.iniciarPago('basico');
+            } else if (text.includes('Pro') || text.includes('4.99')) {
+                window.iniciarPago('pro');
+            }
+        });
+    });
+});
