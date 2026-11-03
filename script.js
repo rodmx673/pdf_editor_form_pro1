@@ -4,7 +4,7 @@
 const VISIT_ID = localStorage.getItem('visit_id') || 'visit_' + Math.random().toString(36).substr(2, 9);
 localStorage.setItem('visit_id', VISIT_ID);
 
-function logEvent(eventName, details = {}) {
+window.logEvent = function(eventName, details = {}) {
     fetch('https://api.pdfeditforms.com/api/log-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1339,6 +1339,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('langToggle')?.addEventListener('click', () => {
     applyLanguage(currentLang === 'es' ? 'en' : 'es');
 });
+
 
 
 

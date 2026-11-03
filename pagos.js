@@ -6,7 +6,7 @@ window.iniciarPago = async function(plan) {
     }
 
     localStorage.setItem('plan_comprado', plan);
-    logEvent('payment_initiated', { plan: plan, price: plan === 'basico' ? '1.99' : '4.99' });
+    if (typeof window.logEvent === 'function') window.logEvent('payment_initiated', { plan: plan, price: plan === 'basico' ? '1.99' : '4.99' });
     
     // Cambiar el texto del botón si es posible (opcional)
     const btns = document.querySelectorAll('#pricingModal button');
@@ -30,4 +30,5 @@ window.iniciarPago = async function(plan) {
         btns.forEach(b => { b.innerText = b.innerText.replace('Conectando...', 'Comprar'); });
     }
 };
+
 
