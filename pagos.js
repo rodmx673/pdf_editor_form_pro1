@@ -24,8 +24,12 @@ window.iniciarPago = async function(plan) {
             body: JSON.stringify({ plan: plan, session_id: sessionId })
         });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al crear sesión de pago');
+        const raw = await res.text();
+        let data = {};
+        try { data = raw ? JSON.parse(raw) : {}; } catch (e) { data = {}; }
+
+        if (!res.ok) throw new Error(data.error || `Error del servidor (${res.status})`);
+        if (!data.url) throw new Error('El servidor no devolvió una URL de pago');
 
         window.location.href = data.url;
     } catch (error) {
