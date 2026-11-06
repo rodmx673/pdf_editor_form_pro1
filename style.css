@@ -35,8 +35,26 @@ body.editing-mode header.header-hidden { transform: translateY(-100%); }
 body.header-hidden .pdf-container { padding-top: 15px; }
 .pdf-page { position: relative; margin-bottom: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); background: white; border-radius: 8px; overflow: hidden; scroll-snap-align: center; max-width: 100%; width: 100%; display: flex; justify-content: center; }
 .pdf-page canvas { max-width: 100%; height: auto !important; }
-.field-rect { position: absolute; border: 2px solid #0071e3; background-color: rgba(0, 113, 227, 0.1); cursor: move; z-index: 46; }
-.field-rect.selected { border-color: #ff6b00; background-color: rgba(255, 107, 0, 0.2); z-index: 47; }
+.field-rect { position: absolute; border: 2px solid #0071e3; background-color: rgba(0, 113, 227, 0.1); cursor: move; z-index: 10; }
+.field-rect.selected { border-color: #ff6b00; background-color: rgba(255, 107, 0, 0.2); z-index: 11; }
+.field-rect.locked { z-index: 12; }
+
+/* =========================================
+   APILAMIENTO DEL PAYWALL
+   Orden: PDF (1) -> campos (10-12) -> sombreado (50) -> modal (50000)
+   ========================================= */
+.pdf-page canvas {
+    position: relative;
+    z-index: 1;
+}
+.pdf-page .paywall-overlay {
+    z-index: 50 !important;
+    pointer-events: auto !important;
+}
+#paywallOverlay,
+#pricingModal {
+    z-index: 50000 !important;
+}
 
 /* MENÚ HAMBURGUESA */
 #hamburgerMenu { display: none; position: absolute; top: 15px; right: 15px; z-index: 1005; }

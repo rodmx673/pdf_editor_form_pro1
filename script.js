@@ -234,7 +234,7 @@ for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
      pdfPages.appendChild(pageDiv);
      await page.render(renderContext).promise;
      const pageFields = currentFields.filter(f => f.page === pageNum - 1);
-     if (!sessionIsPaid) { const overlay = document.createElement("div"); overlay.className = "paywall-overlay"; overlay.style.cssText = "position:absolute;bottom:0;left:0;right:0;height:66%;background:rgba(0,0,0,0.35);pointer-events:auto;z-index:40;border-radius:0 0 8px 8px;display:flex;align-items:center;justify-content:center;"; overlay.innerHTML = "<div style=\"background:rgba(255,255,255,0.95);padding:20px 30px;border-radius:12px;text-align:center;\"><p style=\"margin:0 0 10px 0;font-weight:bold;color:#333;\">🔒 Contenido bloqueado</p><p style=\"margin:0;color:#666;font-size:13px;\">Llena el 30% para desbloquear el resto</p></div>"; pageDiv.appendChild(overlay); } pageFields.forEach(field => { const fieldIndex = currentFields.indexOf(field); const shouldLock = !sessionIsPaid && fieldIndex >= freeThreshold; createFieldElement(field, pageDiv, shouldLock); });
+     if (!sessionIsPaid) { const overlay = document.createElement("div"); overlay.className = "paywall-overlay"; overlay.style.cssText = "position:absolute;bottom:0;left:0;right:0;height:66%;background:rgba(0,0,0,0.35);pointer-events:auto;z-index:50;border-radius:0 0 8px 8px;display:flex;align-items:center;justify-content:center;"; overlay.innerHTML = "<div style=\"background:rgba(255,255,255,0.95);padding:20px 30px;border-radius:12px;text-align:center;\"><p style=\"margin:0 0 10px 0;font-weight:bold;color:#333;\">🔒 Contenido bloqueado</p><p style=\"margin:0;color:#666;font-size:13px;\">Llena el 30% para desbloquear el resto</p></div>"; overlay.addEventListener('click', function() { showPaywallModal(); }); pageDiv.appendChild(overlay); } pageFields.forEach(field => { const fieldIndex = currentFields.indexOf(field); const shouldLock = !sessionIsPaid && fieldIndex >= freeThreshold; createFieldElement(field, pageDiv, shouldLock); });
      setupDrawingEvents(pageDiv, pageNum - 1);
  }
  pdfContainer.scrollTop = scrollTop;
@@ -262,7 +262,7 @@ lockedDiv.style.display = 'flex';
 lockedDiv.style.alignItems = 'center';
 lockedDiv.style.justifyContent = 'center';
 lockedDiv.style.cursor = 'not-allowed';
-lockedDiv.style.zIndex = '45';
+lockedDiv.style.zIndex = '12';
 lockedDiv.innerHTML = '<span style="font-size:18px;">🔒</span>';
 lockedDiv.dataset.fieldName = field.name;
 lockedDiv.addEventListener('click', function() { showPaywallModal(); });
@@ -851,7 +851,7 @@ let box = document.getElementById('tempDrawBox');
 if (!box) {
 box = document.createElement('div');
 box.id = 'tempDrawBox';
-box.style.cssText = 'position:absolute;border:2px dashed #ff6b00;background:rgba(255,107,0,0.2);pointer-events:none;z-index:100;';
+box.style.cssText = 'position:absolute;border:2px dashed #ff6b00;background:rgba(255,107,0,0.2);pointer-events:none;z-index:11;';
 pageDiv.appendChild(box);
 }
 box.style.left = drawStartX + 'px';
